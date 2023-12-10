@@ -5,16 +5,19 @@ import matplotlib.pyplot as plt
 
 ################### Parzen Window ###################
 
-def UniformKernel(x: float):
+def UniformKernel(x: float) -> float:
     if abs(x) < 0.5:
         return 1.0
     else:
         return 0.0
 
-def GaussianKernel(x: float):
+def GaussianKernel(x: float) -> float:
     return np.exp(-x ** 2 / 2.0) / np.sqrt(2.0 * math.pi)
 
-def ParzenWindow(x: float, data: np.ndarray, kernelFn: callable):
+def ParzenWindow(x: float, data: np.ndarray, kernelFn: callable) -> float:
+    if data.ndim != 1:
+        raise ValueError("Data should be 1D array.")
+
     n = len(data)
     d = 1
     h = 1.06 * np.std(data) * n ** (-1 / (d + 4))

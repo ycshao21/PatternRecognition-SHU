@@ -27,20 +27,20 @@ def UniformKernel(x: float):
     else:
         return 0.0
 
-def GaussianKernel(x: float):
+def GaussianKernel(x: float, sigma: float = 1.0):
     return np.exp(-x ** 2 / 2.0) / np.sqrt(2.0 * math.pi)
 
-def ParzenWindow(x: float, data: np.ndarray, kernelFn: callable):
-    n = len(data)
+def ParzenWindow(x: np.ndarray, data: np.ndarray, kernelFn: callable):
+    N = len(data)
     d = 1
-    h = 1.06 * np.std(data) * n ** (-1 / (d + 4))
+    h = 1.06 * np.std(data) * N ** (-1 / (d + 4))
     V = h ** d
 
     k = sum([kernelFn((xi - x) / h) for xi in data])
-    return k / (n * V)
+    return k / (N * V)
 
 
-class Bayes:
+class MinimumErrorBayes:
     def __init__(self, prior_probs: None | list[float] = None, use_parzen : bool = False) -> None:
         """
         Initialize the Bayes classifier.
@@ -92,8 +92,8 @@ class Bayes:
         # Prior probability
         if self.priorProbs is None:
             self.priorProbs = []
+            # P(y) = count(y) / count(Y)
             for label in range(self.classNum):
-                # P(y) = count(y) / count(Y)
                 self.priorProbs.append(len(y[y == label]) / len(y))
 
         if not self.useParzen:
@@ -111,6 +111,37 @@ class Bayes:
         else:
             self.X_Train = X
             self.y_Train = y
+
+
+    def FindBestClassLabel(self, sample: np.ndarray) -> int:
+        # Conditional probability (irrelevant to the denominator): P(x|y) = P(x1|y) * P(x2|y) * ... * P(xn|y)
+        condProbs: list[float] = []
+        for label in range(self.classNum):
+            condProbs.append(1.0)
+            for i in range(self.featureNum):
+                if not self.useParzen:
+                    mean = self.meanOfEachFeat[label][i]
+                    var = self.varOfEachFeat[label][i]
+                    # Normal distribution
+                    prob = math.exp(-((sample[i] - mean) ** 2) / (2.0 * var)) / math.sqrt(2.0 * math.pi * var) 
+                else:
+                    # Estimate density with Parzen window
+                    prob = ParzenWindow(sample[i], self.X_Train[self.y_Train == label, i], GaussianKernel)
+
+                condProbs[label] *= prob
+
+        # Total probability: P(x) = sum(P(x|y) * P(y))
+        totalProb = sum(self.priorProbs[label] * condProbs[label] for label in range(self.classNum))
+
+        # Posterior probability: P(y|x) = P(x|y) * P(y) / P(x)
+        posteriorProbs: list[float] = []
+        for label in range(self.classNum):
+            posteriorProb = self.priorProbs[label] * condProbs[label] / totalProb
+            posteriorProbs.append(posteriorProb)
+
+        # To find the label with the minimum error rate in binary classification,
+        # we need to find the label with the maximum posterior probability.
+        return np.argmax(posteriorProbs)
 
 
     def Predict(self, X) -> np.ndarray:
@@ -140,41 +171,8 @@ class Bayes:
             raise Exception(f"Feature number mismatched. Expected {self.featureNum} features, got {X.shape[1]} features.")
 
         y_pred = []
-        for i in range(X.shape[0]):  # For each sample
-            posteriorProbs: list[float] = []
-            if not self.useParzen:
-                # Conditional probability (irrelevant to the denominator): P(x|y) = P(x1|y) * P(x2|y) * ... * P(xn|y)
-                condProbs: list[float] = []
-                for label in range(self.classNum):
-                    condProbs.append(1.0)
-                    for feat in range(self.featureNum):
-                        mean = self.meanOfEachFeat[label][feat]
-                        var = self.varOfEachFeat[label][feat]
-                        # Normal distribution
-                        prob = math.exp(-((X[i][feat] - mean) ** 2) / (2.0 * var)) / math.sqrt(2.0 * math.pi * var) 
-                        condProbs[label] *= prob
-
-                # Total probability: P(x) = sum(P(x|y) * P(y))
-                totalProb = sum(self.priorProbs[label] * condProbs[label] for label in range(self.classNum))
-
-                # Posterior probability: P(y|x) = P(x|y) * P(y) / P(x)
-                for label in range(self.classNum):
-                    posteriorProb = self.priorProbs[label] * condProbs[label] / totalProb
-                    posteriorProbs.append(posteriorProb)
-            else:
-                for label in range(self.classNum):
-                    # Estimate density with Parzen window
-                    density = 1.0
-                    for j in range(self.featureNum):
-                        density *= ParzenWindow(X[i, j], self.X_Train[self.y_Train == label, j], GaussianKernel)
-
-                    # Posterior probability
-                    posteriorProb = self.priorProbs[label] * density
-                    posteriorProbs.append(posteriorProb)
-
-            # To find the label with the minimum error rate in binary classification,
-            # we need to find the label with the maximum posterior probability.
-            bestClass = np.argmax(posteriorProbs)
+        for sample in X:  # For each sample
+            bestClass = self.FindBestClassLabel(sample)
             y_pred.append(bestClass)
 
         return np.array(y_pred)

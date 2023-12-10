@@ -2,11 +2,12 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from Models import Bayes
+from Models import MinimumErrorBayes
 from Utils.Metrics import PrintAccuracy, DisplayConfusionMatrix
 
+
 def Test(X: np.ndarray, y: np.ndarray, use_parzen: bool, prior_probs=None) -> None:
-    model = Bayes.Bayes(prior_probs=prior_probs, use_parzen=use_parzen)
+    model = MinimumErrorBayes.MinimumErrorBayes(prior_probs=prior_probs, use_parzen=use_parzen)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
     model.Fit(X_train, y_train)
@@ -26,7 +27,7 @@ def Task01(data: pd.DataFrame) -> None:
     """
     X = data['体重(kg)'].values.astype(float)
     y = data['性别'].values.astype(int)
-    Test(X, y, prior_probs=None, use_parzen=False)
+    Test(X, y, use_parzen=False)
 
 
 def Task02(data: pd.DataFrame) -> None:
@@ -39,18 +40,18 @@ def Task02(data: pd.DataFrame) -> None:
     """
     X = data[['身高(cm)', '体重(kg)']].values.astype(float)
     y = data['性别'].values.astype(int)
-    Test(X, y, prior_probs=None, use_parzen=False)
+    Test(X, y, use_parzen=False)
     
 
-def Task03(data: pd.DataFrame):
+def Task03(data: pd.DataFrame) -> None:
     """
     采用Parzen窗法估计概率密度
     """
     X = data['体重(kg)'].values.astype(float)
     y = data['性别'].values.astype(int)
-    Test(X, y, prior_probs=None, use_parzen=True)
+    Test(X, y, use_parzen=True)
 
 
 if __name__ == '__main__':
     data = pd.read_csv("Dataset/genderData_Merged.csv")
-    Task02(data)
+    Task03(data)
