@@ -27,7 +27,7 @@ def UniformKernel(x: float):
     else:
         return 0.0
 
-def GaussianKernel(x: float, sigma: float = 1.0):
+def GaussianKernel(x: float):
     return np.exp(-x ** 2 / 2.0) / np.sqrt(2.0 * math.pi)
 
 def ParzenWindow(x: np.ndarray, data: np.ndarray, kernelFn: callable):
@@ -41,14 +41,19 @@ def ParzenWindow(x: np.ndarray, data: np.ndarray, kernelFn: callable):
 
 
 class MinimumErrorBayes:
-    def __init__(self, prior_probs: None | list[float] = None, use_parzen : bool = False) -> None:
+    def __init__(self, prior_probs: None | list[float] = None, use_parzen : bool = False, kernel = 'Gaussian') -> None:
         """
-        Initialize the Bayes classifier.
+        Initialize the classifier.
 
         Parameters
         ----------
         prior_probs : None | list[float], optional
-            Prior probabilities of each class, by default None.
+            Prior probabilities, by default None
+        use_parzen : bool, optional
+            Whether to use parzen window, by default False
+        kernel : str, optional
+            Type of the kernel function of the parzen window, by default 'Gaussian'
+            Kernels available: 'Gaussian', 'Uniform'
         """
         self.priorProbs: None | list[float] = prior_probs
         self.featureNum: int = None
@@ -60,6 +65,10 @@ class MinimumErrorBayes:
         self.useParzen: bool = use_parzen
         self.X_Train: None | np.ndarray = None
         self.y_Train: None | np.ndarray = None
+        if kernel == 'Gaussian':
+            self.kernelFn: callable = GaussianKernel
+        elif kernel == 'Uniform':
+            self.kernelFn: callable = UniformKernel
 
 
     def Fit(self, X, y) -> None:
@@ -111,9 +120,9 @@ class MinimumErrorBayes:
         else:
             self.X_Train = X
             self.y_Train = y
+    
 
-
-    def FindBestClassLabel(self, sample: np.ndarray) -> int:
+    def CalculatePosteriorProbs(self, sample: np.ndarray) -> list[float]:
         # Conditional probability (irrelevant to the denominator): P(x|y) = P(x1|y) * P(x2|y) * ... * P(xn|y)
         condProbs: list[float] = []
         for label in range(self.classNum):
@@ -126,8 +135,7 @@ class MinimumErrorBayes:
                     prob = math.exp(-((sample[i] - mean) ** 2) / (2.0 * var)) / math.sqrt(2.0 * math.pi * var) 
                 else:
                     # Estimate density with Parzen window
-                    prob = ParzenWindow(sample[i], self.X_Train[self.y_Train == label, i], GaussianKernel)
-
+                    prob = ParzenWindow(sample[i], self.X_Train[self.y_Train == label, i], self.kernelFn)
                 condProbs[label] *= prob
 
         # Total probability: P(x) = sum(P(x|y) * P(y))
@@ -138,10 +146,7 @@ class MinimumErrorBayes:
         for label in range(self.classNum):
             posteriorProb = self.priorProbs[label] * condProbs[label] / totalProb
             posteriorProbs.append(posteriorProb)
-
-        # To find the label with the minimum error rate in binary classification,
-        # we need to find the label with the maximum posterior probability.
-        return np.argmax(posteriorProbs)
+        return posteriorProbs
 
 
     def Predict(self, X) -> np.ndarray:
@@ -171,8 +176,11 @@ class MinimumErrorBayes:
             raise Exception(f"Feature number mismatched. Expected {self.featureNum} features, got {X.shape[1]} features.")
 
         y_pred = []
-        for sample in X:  # For each sample
-            bestClass = self.FindBestClassLabel(sample)
+        for sample in X:
+            # To find the label with the minimum error rate in binary classification,
+            # we need to find the label with the maximum posterior probability.
+            posteriorProbs = self.CalculatePosteriorProbs(sample)
+            bestClass = np.argmax(posteriorProbs)
             y_pred.append(bestClass)
 
         return np.array(y_pred)
