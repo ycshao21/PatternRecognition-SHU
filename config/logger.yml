@@ -1,0 +1,9 @@
+Preprocess:
+  level: INFO
+  to_console: true
+
+Test:
+  level: DEBUG
+  to_console: true
+  save_path: log/test.log
+  mode: a

@@ -71,7 +71,7 @@ class MinimumErrorBayes:
             self.kernelFn: callable = UniformKernel
 
 
-    def Fit(self, X, y) -> None:
+    def fit(self, X, y) -> None:
         """
         Fit the classifier.
 
@@ -149,7 +149,7 @@ class MinimumErrorBayes:
         return posteriorProbs
 
 
-    def Predict(self, X) -> np.ndarray:
+    def predict(self, X) -> np.ndarray:
         """
         Predict the labels of the given data.
 
