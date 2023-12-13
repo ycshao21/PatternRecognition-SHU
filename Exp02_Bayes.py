@@ -19,7 +19,7 @@ def Task01(data: pd.DataFrame) -> None:
     y = data['性别'].values.astype(int)
 
     # Fit the model
-    model = MinimumErrorBayes.MinimumErrorBayes(prior_probs=None, use_parzen=False)
+    model = MinimumErrorBayes(prior_probs=None, use_parzen=False)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
     model.Fit(X_train, y_train)
 
@@ -53,7 +53,7 @@ def Task02(data: pd.DataFrame) -> None:
     y = data['性别'].values.astype(int)
 
     # Fit the model
-    model = MinimumErrorBayes.MinimumErrorBayes(prior_probs=None, use_parzen=False)
+    model = MinimumErrorBayes(prior_probs=None, use_parzen=False)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
     model.Fit(X_train, y_train)
 
@@ -93,7 +93,7 @@ def Task03(data: pd.DataFrame) -> None:
     y = data['性别'].values.astype(int)
 
     # Fit the model
-    model = MinimumErrorBayes.MinimumErrorBayes(prior_probs=None, use_parzen=True)
+    model = MinimumErrorBayes(prior_probs=None, use_parzen=True)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=True)
     model.Fit(X_train, y_train)
 
@@ -117,4 +117,4 @@ def Task03(data: pd.DataFrame) -> None:
 
 if __name__ == '__main__':
     data = pd.read_csv("Dataset/genderData_Merged.csv")
-    Task01(data)
+    Task03(data)
