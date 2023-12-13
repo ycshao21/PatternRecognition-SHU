@@ -11,7 +11,7 @@ import initialize
 logger = logging.getLogger(name="Test")
 
 
-def Task01(data: pd.DataFrame) -> None:
+def task_01(data: pd.DataFrame) -> None:
     """
     应用单个特征进行实验：以(a)身高、(b)体重或(c)鞋码尺寸数据作为特征，
     在正态分布假设下利用最大似然法或者贝叶斯估计法估计分布密度参数（只利用训练数据估计密度），
@@ -51,7 +51,7 @@ def Task01(data: pd.DataFrame) -> None:
     plt.show()
 
 
-def Task02(data: pd.DataFrame) -> None:
+def task_02(data: pd.DataFrame) -> None:
     """
     应用两个特征进行实验：同时采用身高和体重数据作为特征，假设二者不相关，
     在正态分布假设下估计概率密度，建立最小错误率Bayes分类器，写出得到的决策规则，
@@ -105,7 +105,7 @@ def Task02(data: pd.DataFrame) -> None:
     plt.show()
 
 
-def Task03(data: pd.DataFrame) -> None:
+def task_03(data: pd.DataFrame) -> None:
     """
     采用Parzen窗法估计概率密度
     """
@@ -140,10 +140,9 @@ def Task03(data: pd.DataFrame) -> None:
     plt.legend()
     plt.show()
 
-
 if __name__ == "__main__":
     initialize.init()
-    data = pd.read_csv(r"dataset\genderdata\processed\all.csv")
-    Task01(data)
-    Task02(data)
-    Task03(data)
+    data = pd.read_csv("dataset/genderdata/preprocessed/all.csv")
+    task_01(data)
+    task_02(data)
+    task_03(data)

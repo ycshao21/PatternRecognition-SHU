@@ -1,4 +1,7 @@
+concurrent_log_handler==0.9.25
 matplotlib==3.8.0
 numpy==1.26.2
 pandas==2.1.4
 scikit_learn==1.2.2
+seaborn==0.13.0
+ruamel.yaml==0.17.21
