@@ -21,11 +21,11 @@ def confusion_mat(
     class_names: list[str],
     title: str = "Confusion Matrix",
     camp: str = "Blues",
-    figsize: tuple = (8, 6),
+    figsize: tuple = (10, 8),
     fontsize: int = 14,
     dpi: int = 100,
     save_path: str = None,
-    show: bool = False,
+    show: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     cm = skmetrics.confusion_matrix(truth, pred)
     # Devide each element by the sum of the corresponding row

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import logging
 
 from models import classifier
-from prutils import evaluation as eval
+from prutils.math import evaluation as eval
 import initialize
 
 logger = logging.getLogger(name="Test")
@@ -42,7 +42,7 @@ def task_01(data: pd.DataFrame) -> None:
     xMin, xMax = 140, 200
     classA, classB = [], []
     for x in range(xMin, xMax, 1):
-        probA, probB = model.CalculatePosteriorProbs(np.array([x]))
+        probA, probB = model.cal_posterior_probs(np.array([x]))
         classA.append(probA)
         classB.append(probB)
     plt.plot(range(xMin, xMax, 1), classA, label="Female")
@@ -87,7 +87,7 @@ def task_02(data: pd.DataFrame) -> None:
     classA, classB = [], []
     for i in range(X_Mesh.shape[0]):
         for j in range(X_Mesh.shape[1]):
-            probA, probB = model.CalculatePosteriorProbs(
+            probA, probB = model.cal_posterior_probs(
                 np.array([X_Mesh[i, j], y_Mesh[i, j]])
             )
             classA.append(probA)
@@ -132,7 +132,7 @@ def task_03(data: pd.DataFrame) -> None:
     xMin, xMax = 40, 100
     classA, classB = [], []
     for x in range(xMin, xMax, 1):
-        probA, probB = model.CalculatePosteriorProbs(np.array([x]))
+        probA, probB = model.cal_posterior_probs(np.array([x]))
         classA.append(probA)
         classB.append(probB)
     plt.plot(range(xMin, xMax, 1), classA, label="Female")
