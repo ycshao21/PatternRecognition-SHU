@@ -28,7 +28,7 @@ def confusion_mat(
     show: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
     cm = skmetrics.confusion_matrix(truth, pred)
-    # Devide each element by the sum of the corresponding row
+    # Divide each element by the sum of the corresponding row
     cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
     # Plot
     plt.figure(figsize=figsize, dpi=dpi)

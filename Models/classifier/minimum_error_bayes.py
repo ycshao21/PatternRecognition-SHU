@@ -7,7 +7,7 @@ class MinimumErrorBayes:
         self,
         prior_probs: None | list[float] = None,
         use_parzen: bool = False,
-        kernel="Gaussian",
+        kernel: str = "Gaussian"
     ) -> None:
         """
         Initialize the classifier.
@@ -29,13 +29,13 @@ class MinimumErrorBayes:
         self.feature_means: np.ndarray = None
         self.feature_vars: np.ndarray = None
 
-        self.useParzen: bool = use_parzen
+        self.use_parzen: bool = use_parzen
         self.X_train: None | np.ndarray = None
-        self.y_Train: None | np.ndarray = None
+        self.y_train: None | np.ndarray = None
         if kernel == "Gaussian":
-            self.kernel_func: callable = self.GaussianKernel
+            self.kernel_func: callable = self.gaussian_kernel
         elif kernel == "Uniform":
-            self.kernel_func: callable = self.UniformKernel
+            self.kernel_func: callable = self.uniform_kernel
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
@@ -53,9 +53,9 @@ class MinimumErrorBayes:
         Raises
         ------
         Exception
-            If the number of classes is greater than 2.
+            If the number of classes is not equal to 2.
         """
-
+        # If X is a vector, reshape it to a 2D array.
         if X.ndim == 1:
             X = X.reshape(-1, 1)
 
@@ -71,7 +71,7 @@ class MinimumErrorBayes:
             _, counts = np.unique(y, return_counts=True)
             self.prior_probs = counts / np.sum(counts)
 
-        if not self.useParzen:
+        if not self.use_parzen:
             # Mean and standard deviation of each feature
             self.feature_means = np.zeros(
                 (self.n_classes, self.n_features), dtype=float
@@ -84,7 +84,7 @@ class MinimumErrorBayes:
                 self.feature_vars[i] = np.var(X[y == i], axis=0)
         else:
             self.X_train = X
-            self.y_Train = y
+            self.y_train = y
 
     def cal_posterior_probs(self, sample: np.ndarray) -> np.ndarray:
         """
@@ -102,7 +102,7 @@ class MinimumErrorBayes:
             Posterior probabilities of the given sample.
             Shape: (n_classes, ).
         """
-        if not self.useParzen:
+        if not self.use_parzen:
             conditional_probs = np.prod(
                 np.exp(
                     -((sample - self.feature_means) ** 2)
@@ -115,9 +115,9 @@ class MinimumErrorBayes:
             conditional_probs = np.prod(
                 np.array(
                     [
-                        self.ParzenWindow(
+                        self.parzen_window(
                             sample,
-                            self.X_train[self.y_Train == i],
+                            self.X_train[self.y_train == i],
                             self.kernel_func,
                         )
                         for i in range(self.n_classes)
@@ -174,22 +174,22 @@ class MinimumErrorBayes:
         return y_pred
 
     @staticmethod
-    def UniformKernel(x: float):
+    def uniform_kernel(x: float):
         if abs(x) < 0.5:
             return 1.0
         else:
             return 0.0
 
     @staticmethod
-    def GaussianKernel(x: float):
+    def gaussian_kernel(x: float):
         return np.exp(-(x**2) / 2.0) / np.sqrt(2.0 * math.pi)
 
     @staticmethod
-    def ParzenWindow(x: np.ndarray, data: np.ndarray, kernelFn: callable):
+    def parzen_window(x: np.ndarray, data: np.ndarray, kernel_func: callable):
         N = len(data)
         d = 1
         h = 1.06 * np.std(data) * N ** (-1 / (d + 4))
         V = h**d
 
-        k = sum([kernelFn((xi - x) / h) for xi in data])
+        k = sum([kernel_func((xi - x) / h) for xi in data])
         return k / (N * V)
