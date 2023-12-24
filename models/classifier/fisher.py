@@ -39,23 +39,23 @@ class Fisher:
         #       N is the number of samples of class i,
         #       x_j is a sample of class i,
         #       m_i is a d-dimensional vector, d is the number of features.
-        means = np.array(
+        class_means = np.array(
             [
                 np.mean(X[y == i], axis=0)
                 for i in range(self.n_classes)
             ]
         )
-        mean_diff: np.ndarray = means[0] - means[1]
+        mean_diff: np.ndarray = class_means[0] - class_means[1]
 
         # Within-class scatter matrix: S_w = sum(S_i),
         # where S_i = sum((x_j - m_i) * (x_j - m_i).T), a d*d matrix, j is the sample index,
         #       S_w is also a d*d matrix.
         S_w = np.sum(
             [
-                np.dot((X[y == i] - means[i]).T, X[y == i] - means[i])
+                np.dot((X[y == i] - class_means[i]).T, X[y == i] - class_means[i])
                 for i in range(self.n_classes)
             ],
-            axis=0,
+            axis=0
         )
 
         # Best projection direction: w = S_w^-1 * (m_1 - m_2),
@@ -63,7 +63,7 @@ class Fisher:
         self.projection = np.dot(np.linalg.inv(S_w), mean_diff)
 
         # Projected data: y = w.T * x,
-        means_projected = np.dot(self.projection, means.T)
+        means_projected = np.dot(self.projection, class_means.T)
 
         # Calculate the threshold: w_0 = (m_1 + m_2) / 2
         self.threshold = np.mean(means_projected)

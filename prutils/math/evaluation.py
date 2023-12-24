@@ -22,7 +22,7 @@ def confusion_mat(
     title: str = "Confusion Matrix",
     camp: str = "Blues",
     figsize: tuple = (10, 8),
-    fontsize: int = 14,
+    fontsize: int = 12,
     dpi: int = 100,
     save_path: str = None,
     show: bool = True,
@@ -30,6 +30,7 @@ def confusion_mat(
     cm = skmetrics.confusion_matrix(truth, pred)
     # Divide each element by the sum of the corresponding row
     cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+
     # Plot
     plt.figure(figsize=figsize, dpi=dpi)
     sns.heatmap(
@@ -45,8 +46,11 @@ def confusion_mat(
     plt.ylabel("True", fontsize=fontsize)
     plt.xticks(fontsize=fontsize, rotation=45)
     plt.yticks(fontsize=fontsize, rotation=45)
+
     if save_path:
         plt.savefig(save_path, bbox_inches="tight")
+
     if show:
         plt.show()
+
     return (cm, cm_percent)
