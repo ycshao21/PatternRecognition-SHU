@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split, LeaveOneOut
+from sklearn.preprocessing import StandardScaler
 import logging
 import matplotlib.pyplot as plt
 
@@ -9,6 +10,7 @@ from prutils.math import evaluation as eval
 import initialize
 
 logger = logging.getLogger(name="Test")
+
 
 def task_01(data):
     """
@@ -20,13 +22,19 @@ def task_01(data):
     X = data[["身高(cm)", "体重(kg)"]].values.astype(float)
     y = data["性别"].values.astype(int)
 
-    # Fit the model
-    fisher = classifier.Fisher()
-    bayes = classifier.MinimumErrorBayes()
-
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
     )
+
+    # Standardize data
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # Fit the model
+    fisher = classifier.Fisher()
+    bayes = classifier.MinimumErrorBayes()
 
     fisher.fit(X_train, y_train)
     bayes.fit(X_train, y_train)
@@ -74,11 +82,18 @@ def task_02(data):
     X = data[["身高(cm)", "体重(kg)"]].values.astype(float)
     y = data["性别"].values.astype(int)
 
-    # Fit the model
-    model = classifier.Fisher()
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
     )
+
+    # Standardize data
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # Fit the model
+    model = classifier.Fisher()
 
     loo_err = 0
     loo = LeaveOneOut()

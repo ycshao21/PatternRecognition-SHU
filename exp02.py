@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-import logging
 
+import logging
 from models import classifier
 from prutils.math import evaluation as eval
 import initialize
@@ -22,11 +23,20 @@ def task_01(data: pd.DataFrame) -> None:
     X = data["身高(cm)"].values.astype(float)
     y = data["性别"].values.astype(int)
 
-    # Fit the model
-    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
     )
+    X_train = X_train.reshape(-1, 1)
+    X_test = X_test.reshape(-1, 1)
+
+    # # Standardize data
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
+
+    # Fit the model
+    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
     model.fit(X_train, y_train)
 
     # Test the model
@@ -62,11 +72,18 @@ def task_02(data: pd.DataFrame) -> None:
     X = data[["身高(cm)", "体重(kg)"]].values.astype(float)
     y = data["性别"].values.astype(int)
 
-    # Fit the model
-    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
     )
+
+    # # Standardize data
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
+
+    # Fit the model
+    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
     model.fit(X_train, y_train)
 
     # Test the model
@@ -112,11 +129,20 @@ def task_03(data: pd.DataFrame) -> None:
     X = data["体重(kg)"].values.astype(float)
     y = data["性别"].values.astype(int)
 
-    # Fit the model
-    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=True)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
     )
+    X_train = X_train.reshape(-1, 1)
+    X_test = X_test.reshape(-1, 1)
+
+    # # Standardize data
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
+
+    # Fit the model
+    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=True)
     model.fit(X_train, y_train)
 
     # Test the model
@@ -139,6 +165,7 @@ def task_03(data: pd.DataFrame) -> None:
     plt.plot(range(xMin, xMax, 1), classB, label="Male")
     plt.legend()
     plt.show()
+
 
 if __name__ == "__main__":
     initialize.init()

@@ -1,14 +1,12 @@
-import math
 import numpy as np
-
 
 class MinimumErrorBayes:
     def __init__(
         self,
         prior_probs: None | list[float] = None,
         use_parzen: bool = False,
-        kernel: str = "Gaussian"
-    ) -> None:
+        kernel_name: str = "Gaussian"
+    ):
         """
         Initialize the classifier.
 
@@ -18,7 +16,7 @@ class MinimumErrorBayes:
             Prior probabilities, by default None
         use_parzen : bool, optional
             Whether to use parzen window, by default False
-        kernel : str, optional
+        kernel_name : str, optional
             Type of the kernel function of the parzen window, by default 'Gaussian'
             Kernels available: 'Gaussian', 'Uniform'
         """
@@ -32,10 +30,14 @@ class MinimumErrorBayes:
         self.use_parzen: bool = use_parzen
         self.X_train: None | np.ndarray = None
         self.y_train: None | np.ndarray = None
-        if kernel == "Gaussian":
+
+        kernel_name = kernel_name.capitalize()
+        if kernel_name == "Gaussian":
             self.kernel_func: callable = self.gaussian_kernel
-        elif kernel == "Uniform":
+        elif kernel_name == "Uniform":
             self.kernel_func: callable = self.uniform_kernel
+        else:
+            raise ValueError(f"Unknown kernel: {kernel_name}")
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
@@ -52,7 +54,7 @@ class MinimumErrorBayes:
 
         Raises
         ------
-        Exception
+        ValueError
             If the number of classes is not equal to 2.
         """
         # If X is a vector, reshape it to a 2D array.
@@ -62,7 +64,7 @@ class MinimumErrorBayes:
         self.n_features = X.shape[1]
         self.n_classes = np.unique(y).shape[0]
         if self.n_classes != 2:
-            raise Exception(
+            raise ValueError(
                 "The classifier only supports binary classification."
             )
 
@@ -138,7 +140,7 @@ class MinimumErrorBayes:
         )
         return posterior_probs
 
-    def predict(self, X) -> np.ndarray:
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predict the labels of the given data.
 
@@ -154,15 +156,15 @@ class MinimumErrorBayes:
 
         Raises
         ------
-        Exception
+        ValueError
             If the number of features of the given data is not equal to the number of features of the training data.
         """
-        X = np.array(X)
+        # If X is a 1D array, reshape it to a 2D array.
         if X.ndim == 1:
             X = X.reshape(-1, 1)
 
         if X.shape[1] != self.n_features:
-            raise Exception(
+            raise ValueError(
                 f"Feature number mismatched. Expected {self.n_features} features, got {X.shape[1]} features."
             )
 
@@ -182,7 +184,7 @@ class MinimumErrorBayes:
 
     @staticmethod
     def gaussian_kernel(x: float):
-        return np.exp(-(x**2) / 2.0) / np.sqrt(2.0 * math.pi)
+        return np.exp(-(x**2) / 2.0) / np.sqrt(2.0 * np.pi)
 
     @staticmethod
     def parzen_window(x: np.ndarray, data: np.ndarray, kernel_func: callable):

@@ -34,7 +34,7 @@ class FLDA(BaseDecomposition):
     def fit(self, X: np.ndarray, y) -> None:
         n_classes = len(np.unique(y))
         if n_classes != 2:
-            raise Exception(
+            raise ValueError(
                 "It only supports binary classification."
             )
         

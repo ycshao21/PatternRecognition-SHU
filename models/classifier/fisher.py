@@ -1,13 +1,12 @@
 import numpy as np
 
 class Fisher:
-    def __init__(self) -> None:
-        """ Initialize the classifier."""
+    def __init__(self):
+        """Initialize the classifier."""
         self.n_features: int = None
         self.n_classes: int = None
         self.projection: np.ndarray = None
         self.threshold: float = None
-
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
@@ -24,13 +23,13 @@ class Fisher:
 
         Raises
         ------
-        Exception
+        ValueError
             If the number of classes is not equal to 2.
         """
         self.n_features = X.shape[1]
         self.n_classes = len(set(y))
         if self.n_classes != 2:
-            raise Exception(
+            raise ValueError(
                 "The classifier only supports binary classification."
             )
 
@@ -68,7 +67,6 @@ class Fisher:
         # Calculate the threshold: w_0 = (m_1 + m_2) / 2
         self.threshold = np.mean(means_projected)
 
-
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predict the labels of the given data.
@@ -85,12 +83,17 @@ class Fisher:
 
         Raises
         ------
-        Exception
+        ValueError
             If the number of features of the given data is not equal to the number of features of the training data.
         """
         # If X is a vector, reshape it to a 2D array.
         if X.ndim == 1:
             X = X.reshape(-1, 1)
+
+        if X.shape[1] != self.n_features:
+            raise ValueError(
+                f"Feature number mismatched. Expected {self.n_features} features, got {X.shape[1]} features."
+            )
 
         # If y = w.T * x > w_0, then x belongs to class 0,
         # else x belongs to class 1.
