@@ -97,9 +97,61 @@ def task_02(data, model_name: str):
         pred=y_pred_PCA, truth=y_test, class_names=["Female", "Male"], title=f"{model_name}_PCA", show=True
     )
 
+def task_03(data):
+    X = data[["身高(cm)", "体重(kg)", "鞋码"]].values.astype(float)
+    y = data["性别"].values.astype(int)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, shuffle=True
+    )
+
+    # Standardize data
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # PCA
+    pca = decomposition.PCA(n_components=2)
+    pca.fit(X_train)
+    X_train_PCA = pca.transform(X_train)
+    X_test_PCA = pca.transform(X_test)
+
+    # FLDA
+    flda = decomposition.FLDA(n_components=2)
+    flda.fit(X_train, y_train)
+    X_train_FLDA = flda.transform(X_train)
+    X_test_FLDA = flda.transform(X_test)
+
+    # Fit the model
+    bayes_PCA = classifier.MinimumErrorBayes()
+    bayes_FLDA = classifier.MinimumErrorBayes()
+
+    bayes_PCA.fit(X_train_PCA, y_train)
+    bayes_FLDA.fit(X_train_FLDA, y_train)
+
+    # Test the model
+    y_pred_PCA = bayes_PCA.predict(X_test_PCA)
+
+    acc_PCA = eval.accuracy(pred=y_pred_PCA, truth=y_test)
+    f1_PCA = eval.f1_score(pred=y_pred_PCA, truth=y_test)
+    logger.critical(f"[PCA] Accuracy: {acc_PCA:.4f}, F1 Score: {f1_PCA:.4f}")
+    eval.confusion_mat(
+        pred=y_pred_PCA, truth=y_test, class_names=["Female", "Male"], title="Bayes (PCA)", show=True
+    )
+
+    y_pred_FLDA = bayes_FLDA.predict(X_test_FLDA)
+    acc_FLDA = eval.accuracy(pred=y_pred_FLDA, truth=y_test)
+    f1_FLDA = eval.f1_score(pred=y_pred_FLDA, truth=y_test)
+    logger.critical(f"[FLDA] Accuracy: {acc_FLDA:.4f}, F1 Score: {f1_FLDA:.4f}")
+    eval.confusion_mat(
+        pred=y_pred_FLDA, truth=y_test, class_names=["Female", "Male"], title=f"Bayes (FLDA)", show=True
+    )
+
 
 if __name__ == "__main__":
     initialize.init()
     data = pd.read_csv("dataset/genderdata/preprocessed/all.csv")
-    # task_01(data)
+    task_01(data)
     task_02(data, model_name='Bayes')
+    task_03(data)
