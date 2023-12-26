@@ -3,15 +3,9 @@ comet_ml==3.35.5
 concurrent_log_handler==0.9.25
 coremltools==7.1
 Flask==2.2.2
-GitPython==3.1.40
-GitPython==3.1.37
-GitPython==3.1.40
 ipython==8.18.1
-ipython==8.15.0
 matplotlib==3.8.0
-matplotlib==3.7.2
 mss==9.0.1
-numpy==1.22.4
 numpy==1.24.3
 onnx==1.15.0
 onnxruntime==1.16.3

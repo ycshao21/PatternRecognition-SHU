@@ -9,6 +9,8 @@ from models import classifier
 from prutils.math import evaluation as eval
 import initialize
 
+from matplotlib.colors import ListedColormap
+
 logger = logging.getLogger(name="Test")
 
 
@@ -26,11 +28,14 @@ def task_01(data):
         X, y, test_size=0.2, shuffle=True
     )
 
+    p = X_train[:, 0]
+    q = X_train[:, 1]
     # Standardize data
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
+    # x_transform = X_train
 
     # Fit the model
     fisher = classifier.Fisher()
@@ -47,36 +52,77 @@ def task_01(data):
     f1_fisher = eval.f1_score(pred=y_pred_fisher, truth=y_test)
     logger.critical(f"[Fisher] Accuracy: {acc_fisher:.4f}, F1 Score: {f1_fisher:.4f}")
     eval.confusion_mat(
-        pred=y_pred_fisher, truth=y_test, class_names=["Female", "Male"], title="Fisher", show=True
+        pred=y_pred_fisher,
+        truth=y_test,
+        class_names=["Female", "Male"],
+        title="Fisher",
+        show=True,
     )
 
     acc_bayes = eval.accuracy(pred=y_pred_bayes, truth=y_test)
     f1_bayes = eval.f1_score(pred=y_pred_bayes, truth=y_test)
     logger.critical(f"[Bayes] Accuracy: {acc_bayes:.4f}, F1 Score: {f1_bayes:.4f}")
     eval.confusion_mat(
-        pred=y_pred_bayes, truth=y_test, class_names=["Female", "Male"], title="Bayes", show=True
+        pred=y_pred_bayes,
+        truth=y_test,
+        class_names=["Female", "Male"],
+        title="Bayes",
+        show=True,
     )
 
     # Visualize the training data
-    # xMin, xMax = 140, 200
-    # yMin, yMax = 20, 100
-    # x = np.linspace(xMin, xMax, 100)
-    # y = np.linspace(yMin, yMax, 100)
+    # Fisher
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    fig.suptitle('Decision Boundary Analysis')
 
-    # X1, X2 = np.meshgrid(x, y)
-    # X_grid = np.c_[X1.ravel(), X2.ravel()]
-    # y_grid = fisher.predict(X_grid).reshape(X1.shape)
+    # x_min, x_max = -5, 5
+    # y_min, y_max = -5, 5
+    # x = x_transform[:, 0]
+    # y = x_transform[:, 1]
+    # t = np.array([x_min, x_max])
+    # # line: k,b b=-w_0, k=-w_1/w_2
+    # k = -fisher.projection[0] / fisher.projection[1]
+    # b = -fisher.threshold
+    # y_pred = k * t + b
+    # ax1.scatter(x, y, c=y_train, cmap=plt.cm.coolwarm, edgecolors="k")
+    # ax1.plot(t, y_pred, color="green", linestyle="-", linewidth=2, marker="o")
+    # ax1.set_xlim(x_min, x_max)
+    # ax1.set_ylim(y_min, y_max)
+    # ax1.set_title("Fisher Linear Discriminant1")
 
-    # plt.figure(figsize=(8, 6))
-    # plt.contourf(X1, X2, y_grid, cmap=plt.cm.coolwarm, alpha=0.8)
-    # plt.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=plt.cm.coolwarm)
-    # plt.xlim(xMin, xMax)
-    # plt.ylim(yMin, yMax)
-    # plt.xlabel("Height (cm)")
-    # plt.ylabel("Weight (kg)")
-    # plt.title("Fisher Linear Discriminant")
+    sex = ["female","male"]
+    # Fisher predict decision boundary
+    axes = [140, 200, 20, 100]
+    xp = np.linspace(axes[0], axes[1], 200)
+    yp = np.linspace(axes[2], axes[3], 200)
+    xx, yy = np.meshgrid(xp, yp)
+    G = np.c_[xx.ravel(), yy.ravel()]
+    Z = fisher.predict(G)
+    Z = Z.reshape(xx.shape)
+    custom_cmap = ListedColormap(["#fafab0", "#9898ff"])
+    ax1.contourf(xx, yy, Z, cmap=custom_cmap, linewidth=5, alpha=0.5)
+    p1 = ax1.scatter(p[y_train == 0], q[y_train == 0], c="r", s=50, edgecolors="k")
+    p2 = ax1.scatter(p[y_train == 1], q[y_train == 1], c="b", s=50, edgecolors="k")
+    ax1.legend([p1,p2], sex, loc = 'upper right')
+    # ax1.scatter(p, q, c=y_train, cmap=plt.cm.coolwarm, edgecolors="k")
+    ax1.set_title("Fisher")
 
-    # plt.show()
+    # Bayes
+    xp = np.linspace(axes[0], axes[1], 200)
+    yp = np.linspace(axes[2], axes[3], 200)
+    xx, yy = np.meshgrid(xp, yp)
+    X = np.c_[xx.ravel(), yy.ravel()]
+    Z = bayes.predict(X)
+    Z = Z.reshape(xx.shape)
+    custom_cmap = ListedColormap(["#fafab0", "#9898ff"])
+    ax2.contourf(xx, yy, Z, cmap=custom_cmap, linewidth=5, alpha=0.5)
+    p1 = ax2.scatter(p[y_train == 0], q[y_train == 0], c="r", s=50, edgecolors="k")
+    p2 = ax2.scatter(p[y_train == 1], q[y_train == 1], c="b", s=50, edgecolors="k")
+    ax2.legend([p1,p2], sex, loc = 'upper right')
+    ax2.set_title("Bayes")
+
+    plt.show()
+
 
 def task_02(data):
     X = data[["身高(cm)", "体重(kg)"]].values.astype(float)
