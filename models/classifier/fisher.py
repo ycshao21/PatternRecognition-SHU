@@ -1,8 +1,11 @@
 import numpy as np
 
-class Fisher:
+from .base_classifier import BaseClassifier
+
+class Fisher(BaseClassifier):
     def __init__(self):
         """Initialize the classifier."""
+        super().__init__()
         self.n_features: int = None
         self.n_classes: int = None
         self.projection: np.ndarray = None
@@ -20,18 +23,18 @@ class Fisher:
         y : np.ndarray
             Labels.
             Shape: (n_samples, ).
-
-        Raises
-        ------
-        ValueError
-            If the number of classes is not equal to 2.
         """
+        X = self._convert_to_2D_array(X)
+
         self.n_features = X.shape[1]
-        self.n_classes = len(set(y))
+        labels = np.unique(y)
+        self.n_classes = len(labels)
+
         if self.n_classes != 2:
             raise ValueError(
-                "The classifier only supports binary classification."
+                "The classifier only supports binary classification for now."
             )
+        self._check_labels(labels, self.n_classes)
 
         # Mean vector of each class: m_i = 1/N * sum(x_j),
         # where i is the class label,
@@ -86,14 +89,8 @@ class Fisher:
         ValueError
             If the number of features of the given data is not equal to the number of features of the training data.
         """
-        # If X is a vector, reshape it to a 2D array.
-        if X.ndim == 1:
-            X = X.reshape(-1, 1)
-
-        if X.shape[1] != self.n_features:
-            raise ValueError(
-                f"Feature number mismatched. Expected {self.n_features} features, got {X.shape[1]} features."
-            )
+        X = self._convert_to_2D_array(X)
+        self._check_feature_number(X, self.n_features)
 
         # If y = w.T * x > w_0, then x belongs to class 0,
         # else x belongs to class 1.

@@ -1,6 +1,8 @@
 import numpy as np
 
-class KNN:
+from .base_classifier import BaseClassifier
+
+class KNN(BaseClassifier):
     def __init__(self, n_neighbors: int):
         """
         Initialize a KNN classifier.
@@ -10,10 +12,10 @@ class KNN:
         n_neighbors : int
             Number of neighbors to use.
         """
-        self.n_neighbors = n_neighbors
-        self.n_classes = None
+        super().__init__()
         self.X_train = None
         self.y_train = None
+        self.n_neighbors = n_neighbors
     
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
@@ -28,9 +30,18 @@ class KNN:
             Labels.
             Shape: (n_samples, ).
         """
-        self.X_train = X
+        self.X_train = self._convert_to_2D_array(X)
         self.y_train = y
-        self.n_classes = np.unique(y).shape[0]
+
+        self.n_features = self.X_train.shape[1]
+        labels = np.unique(y)
+        n_classes = len(labels)
+
+        if n_classes != 2:
+            raise ValueError(
+                "The classifier only supports binary classification for now."
+            )
+        self._check_labels(labels, n_classes)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -48,9 +59,13 @@ class KNN:
             Predicted labels.
             Shape: (n_samples, ).
         """
-        return np.array(
+        X = self._convert_to_2D_array(X)
+        self._check_feature_number(X, self.n_features)
+
+        y_pred = np.array(
             [self.predict_single(x) for x in X]
         )
+        return y_pred
     
     def predict_single(self, x: np.ndarray) -> np.ndarray:
         """
