@@ -58,25 +58,25 @@ def task_01(data):
     )
 
     # Visualize the training data
-    # xMin, xMax = 140, 200
-    # yMin, yMax = 20, 100
-    # x = np.linspace(xMin, xMax, 100)
-    # y = np.linspace(yMin, yMax, 100)
+    xMin, xMax = 140, 200
+    yMin, yMax = 20, 100
+    x = np.linspace(xMin, xMax, 100)
+    y = np.linspace(yMin, yMax, 100)
 
-    # X1, X2 = np.meshgrid(x, y)
-    # X_grid = np.c_[X1.ravel(), X2.ravel()]
-    # y_grid = fisher.predict(X_grid).reshape(X1.shape)
+    X1, X2 = np.meshgrid(x, y)
+    X_grid = np.c_[X1.ravel(), X2.ravel()]
+    y_grid = fisher.predict(X_grid).reshape(X1.shape)
 
-    # plt.figure(figsize=(8, 6))
-    # plt.contourf(X1, X2, y_grid, cmap=plt.cm.coolwarm, alpha=0.8)
-    # plt.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=plt.cm.coolwarm)
-    # plt.xlim(xMin, xMax)
-    # plt.ylim(yMin, yMax)
-    # plt.xlabel("Height (cm)")
-    # plt.ylabel("Weight (kg)")
-    # plt.title("Fisher Linear Discriminant")
+    plt.figure(figsize=(8, 6))
+    plt.contourf(X1, X2, y_grid, cmap=plt.cm.coolwarm, alpha=0.8)
+    plt.scatter(X_train[:, 0], X_train[:, 1], c=y_train, cmap=plt.cm.coolwarm)
+    plt.xlim(xMin, xMax)
+    plt.ylim(yMin, yMax)
+    plt.xlabel("Height (cm)")
+    plt.ylabel("Weight (kg)")
+    plt.title("Fisher Linear Discriminant")
 
-    # plt.show()
+    plt.show()
 
 def task_02(data):
     X = data[["身高(cm)", "体重(kg)"]].values.astype(float)
@@ -87,10 +87,10 @@ def task_02(data):
     )
 
     # Standardize data
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
 
     # Fit the model
     model = classifier.Fisher()
