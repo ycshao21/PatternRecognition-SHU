@@ -120,7 +120,6 @@ def task_01(data):
 
     plt.show()
 
-
 def task_02(data):
     X = data[["身高(cm)", "体重(kg)"]].values.astype(float)
     y = data["性别"].values.astype(int)
@@ -130,10 +129,10 @@ def task_02(data):
     )
 
     # Standardize data
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
 
     # Fit the model
     model = classifier.Fisher()

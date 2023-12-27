@@ -1,6 +1,7 @@
 import numpy as np
 import prutils.math as prmath
 from .base_classifier import BaseClassifier
+from prutils.math import distribution as dist
 
 
 class MinimumErrorBayes(BaseClassifier):
@@ -122,38 +123,33 @@ class MinimumErrorBayes(BaseClassifier):
         """
         if not self.use_parzen:
             conditional_probs = np.prod(
-                np.exp(
-                    -((sample - self.feature_means) ** 2)
-                    / (2.0 * self.feature_vars)
-                )
-                / np.sqrt(2.0 * np.pi * self.feature_vars),
+                dist.normal_distribution(
+                    sample,
+                    mean=self.feature_means,
+                    std=np.sqrt(self.feature_vars)
+                ),
                 axis=1,
             )
         else:
-            conditional_probs = np.prod(
-                np.array(
-                    [
-                        self.parzen_window(
-                            sample,
-                            self.X_train[self.y_train == i],
-                            self.kernel_func,
-                        )
-                        for i in range(self.n_classes)
-                    ]
-                ),
-                axis=1,
+            conditional_probs = np.array(
+                [
+                    self.parzen_window(
+                        sample,
+                        self.X_train[self.y_train == i],
+                        self.kernel_func,
+                    )
+                    for i in range(self.n_classes)
+                ]
             )
 
         # Total probability: P(x) = sum(P(x|y) * P(y))
         total_probability = np.sum(
-            self.prior_probs[label] * conditional_probs[label]
-            for label in range(self.n_classes)
+            self.prior_probs[i] * conditional_probs[i]
+            for i in range(self.n_classes)
         )
 
         # Posterior probability: P(y|x) = P(x|y) * P(y) / P(x)
-        posterior_probs = (
-            self.prior_probs * conditional_probs / total_probability
-        )
+        posterior_probs = self.prior_probs * conditional_probs / total_probability
         return posterior_probs
 
     def predict(self, X: np.ndarray) -> np.ndarray:
@@ -184,12 +180,11 @@ class MinimumErrorBayes(BaseClassifier):
                 f"Feature number mismatched. Expected {self.n_features} features, got {X.shape[1]} features."
             )
 
-        y_pred = np.argmax(
+        return np.argmax(
             np.array([self.cal_posterior_probs(sample) for sample in X]),
             axis=1,
         )
 
-        return y_pred
 
     @staticmethod
     def uniform_kernel(x: float):
@@ -209,7 +204,8 @@ class MinimumErrorBayes(BaseClassifier):
         h = 1.06 * np.std(data) * N ** (-1 / (d + 4))
         V = h**d
 
-        k = sum([kernel_func((xi - x) / h) for xi in data])
+        k = np.sum([kernel_func((xi - x) / h) for xi in data])
+        # print("k:", k)
         return k / (N * V)
 
     def multivar_density(
