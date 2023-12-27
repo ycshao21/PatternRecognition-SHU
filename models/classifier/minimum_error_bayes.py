@@ -1,11 +1,14 @@
 import numpy as np
+import prutils.math as prmath
+from .base_classifier import BaseClassifier
 
-class MinimumErrorBayes:
+
+class MinimumErrorBayes(BaseClassifier):
     def __init__(
         self,
         prior_probs: None | list[float] = None,
         use_parzen: bool = False,
-        kernel_name: str = "Gaussian"
+        kernel_name: str = "Gaussian",
     ):
         """
         Initialize the classifier.
@@ -20,17 +23,23 @@ class MinimumErrorBayes:
             Type of the kernel function of the parzen window, by default 'Gaussian'
             Kernels available: 'Gaussian', 'Uniform'
         """
+        super().__init__()
         self.prior_probs: None | np.ndarray = prior_probs
         self.n_features: int = None
         self.n_classes: int = None
 
-        self.feature_means: np.ndarray = None
-        self.feature_vars: np.ndarray = None
+        # Not using parzen window >>>>>>
+        self.feature_means: np.ndarray = None  # Shape: (n_classes, n_features)
+        self.feature_vars: np.ndarray = None  # Shape: (n_classes, n_features)
+        self.feature_cov: np.ndarray = (
+            None  # Shape: (n_classes, n_features, n_features)
+        )
+        # <<<<<<
 
+        # Using parzen window >>>>>>
         self.use_parzen: bool = use_parzen
         self.X_train: None | np.ndarray = None
         self.y_train: None | np.ndarray = None
-
         kernel_name = kernel_name.capitalize()
         if kernel_name == "Gaussian":
             self.kernel_func: callable = self.gaussian_kernel
@@ -38,6 +47,7 @@ class MinimumErrorBayes:
             self.kernel_func: callable = self.uniform_kernel
         else:
             raise ValueError(f"Unknown kernel: {kernel_name}")
+        # <<<<<<
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         """
@@ -81,9 +91,15 @@ class MinimumErrorBayes:
             self.feature_vars = np.zeros(
                 (self.n_classes, self.n_features), dtype=float
             )
+            self.feature_cov = np.zeros(
+                (self.n_classes, self.n_features, self.n_features), dtype=float
+            )
             for i in range(self.n_classes):
                 self.feature_means[i] = np.mean(X[y == i], axis=0)
                 self.feature_vars[i] = np.var(X[y == i], axis=0)
+                # [ISSUE] jamesnulliu
+                #    Where is my conv function? Performance could be slow when `n_features` is large.
+                self.feature_cov[i] = np.cov(X[y == i], rowvar=False)
         else:
             self.X_train = X
             self.y_train = y
@@ -195,3 +211,34 @@ class MinimumErrorBayes:
 
         k = sum([kernel_func((xi - x) / h) for xi in data])
         return k / (N * V)
+
+    def multivar_density(
+        self, x: np.ndarray, which_class: int = None
+    ) -> float | np.ndarray:
+        if which_class is None:
+            self.logger.warning(
+                "The parameter `which_class` is not given."
+                "All the classes will be considered."
+                "This may lower the performance."
+            )
+            probs = np.array(
+                [
+                    self.multivar_density(x, which_class=i)
+                    for i in range(self.n_classes)
+                ]
+            ) # Shape: (n_classes, )
+            self.logger.debug(f"probs: {probs}")
+            return probs
+        else:
+            cov = self.feature_cov[
+                which_class
+            ]  # Shape: (n_features, n_features)
+            miu = self.feature_means[which_class]  # Shape: (n_features, )
+            prob = (
+                np.exp(-0.5 * (x - miu).T @ np.linalg.inv(cov) @ (x - miu))
+                / (2 * np.pi) ** (self.n_features / 2)
+                / np.sqrt(cov)
+            ) # Shape: (1, 1)
+            prob = prob[0][0]  # Scalar
+            self.logger.debug(f"prob: {prob}")
+            return prob

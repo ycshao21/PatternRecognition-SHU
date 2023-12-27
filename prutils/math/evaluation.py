@@ -21,9 +21,7 @@ def confusion_mat(
     class_names: list[str],
     title: str = "Confusion Matrix",
     camp: str = "Blues",
-    figsize: tuple = (10, 8),
     fontsize: int = 12,
-    dpi: int = 100,
     save_path: str = None,
     show: bool = True,
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -32,7 +30,6 @@ def confusion_mat(
     cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
     # Plot
-    plt.figure(figsize=figsize, dpi=dpi)
     sns.heatmap(
         data=cm_percent,
         cmap=camp,

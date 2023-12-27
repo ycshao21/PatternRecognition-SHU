@@ -44,11 +44,18 @@ def task_01(data: pd.DataFrame) -> None:
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.confusion_mat(
-        pred=y_pred, truth=y_test, class_names=["Female", "Male"], show=True
-    )
 
-    # Visualize the model
+    fig1 = plt.figure(figsize=(10, 8))
+    eval.confusion_mat(
+        pred=y_pred,
+        truth=y_test,
+        class_names=["Female", "Male"],
+        show=False,
+        fontsize=8,
+    )
+    fig1.suptitle("Confusion Matrix", fontsize=12)
+
+    fig2 = plt.figure(figsize=(10, 8))
     xMin, xMax = 140, 200
     classA, classB = [], []
     for x in range(xMin, xMax, 1):
@@ -58,6 +65,8 @@ def task_01(data: pd.DataFrame) -> None:
     plt.plot(range(xMin, xMax, 1), classA, label="Female")
     plt.plot(range(xMin, xMax, 1), classB, label="Male")
     plt.legend()
+    fig2.suptitle("Posterior Probability", fontsize=12)
+
     plt.show()
 
 
@@ -96,6 +105,7 @@ def task_02(data: pd.DataFrame) -> None:
     )
 
     # Visualize the model (surface)
+    fig2 = plt.figure(figsize=(10, 8))
     xMin, xMax = 140, 200
     yMin, yMax = 20, 100
     X_Mesh, y_Mesh = np.meshgrid(
@@ -111,13 +121,30 @@ def task_02(data: pd.DataFrame) -> None:
             classB.append(probB)
     classA = np.array(classA).reshape(X_Mesh.shape)
     classB = np.array(classB).reshape(X_Mesh.shape)
-
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
+    ax = fig2.add_subplot(111, projection="3d")
     ax.plot_surface(X_Mesh, y_Mesh, classA, cmap="autumn", alpha=0.6)
     ax.plot_surface(X_Mesh, y_Mesh, classB, cmap="winter", alpha=0.6)
     ax.set_xlabel("Height")
     ax.set_ylabel("Weight")
+
+    fig3 = plt.figure(figsize=(10, 8))
+    ZA = np.zeros((X_Mesh.shape[0], X_Mesh.shape[1]))
+    ZB = np.zeros((X_Mesh.shape[0], X_Mesh.shape[1]))
+    for i in range(X_Mesh.shape[0]):
+        for j in range(X_Mesh.shape[1]):
+            ZA[i, j] = model.multivar_density(
+                x=np.array([X_Mesh[i, j], y_Mesh[i, j]]), which_class=0
+            )
+            ZB[i, j] = model.multivar_density(
+                x=np.array([X_Mesh[i, j], y_Mesh[i, j]]), which_class=1
+            )
+    ax = fig3.add_subplot(111, projection="3d")
+    ax.plot_surface(X_Mesh, y_Mesh, ZA, cmap="autumn", alpha=0.6)
+    ax.plot_surface(X_Mesh, y_Mesh, ZB, cmap="winter", alpha=0.6)
+    ax.set_xlabel("Height")
+    ax.set_ylabel("Weight")
+    ax.set_zlabel("Density")
+    ax.set_title("Density of Multivariate Normal Distribution, class")
 
     plt.show()
 
@@ -164,6 +191,37 @@ def task_03(data: pd.DataFrame) -> None:
     plt.plot(range(xMin, xMax, 1), classA, label="Female")
     plt.plot(range(xMin, xMax, 1), classB, label="Male")
     plt.legend()
+    plt.show()
+
+
+def visualize_3d_density(
+    model: classifier.MinimumErrorBayes,
+    xMin: int,
+    xMax: int,
+    yMin: int,
+    yMax: int,
+) -> None:
+    X_Mesh, y_Mesh = np.meshgrid(
+        np.linspace(xMin, xMax, 100), np.linspace(yMin, yMax, 100)
+    )
+    classA, classB = [], []
+    for i in range(X_Mesh.shape[0]):
+        for j in range(X_Mesh.shape[1]):
+            probA, probB = model.cal_posterior_probs(
+                np.array([X_Mesh[i, j], y_Mesh[i, j]])
+            )
+            classA.append(probA)
+            classB.append(probB)
+    classA = np.array(classA).reshape(X_Mesh.shape)
+    classB = np.array(classB).reshape(X_Mesh.shape)
+
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X_Mesh, y_Mesh, classA, cmap="autumn", alpha=0.6)
+    ax.plot_surface(X_Mesh, y_Mesh, classB, cmap="winter", alpha=0.6)
+    ax.set_xlabel("Height")
+    ax.set_ylabel("Weight")
+
     plt.show()
 
 
