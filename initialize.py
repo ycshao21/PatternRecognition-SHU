@@ -24,7 +24,7 @@ def config_logger(
     logger = logging.getLogger(name=name)
     logger.setLevel(level=STR_TO_LOG_LEVEL.get(level, logging.WARNING))
     formatter = logging.Formatter(
-        "[%(funcName)s][%(levelname)s] >>>>> %(message)s"
+        "[%(asctime)s][%(levelname)s][%(funcName)s] >>>>>> %(message)s",
     )
     if to_console:
         console = logging.StreamHandler()
