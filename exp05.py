@@ -11,10 +11,13 @@ import initialize
 
 logger = logging.getLogger(name="Test")
 
+LABELS = ["Female", "Male"]
+FEATURES = ["height(cm)", "weight(kg)", "shoe_size"]
+
 
 def task_01(data):
-    X = data[["身高(cm)", "体重(kg)", "鞋码"]].values.astype(float)
-    y = data["性别"].values.astype(int)
+    X = data[FEATURES].values.astype(float)
+    y = data["sex"].values.astype(int)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
@@ -35,13 +38,16 @@ def task_01(data):
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+
+    plt.figure(figsize=(10, 6))
     eval.plot_confusion_mat(
-        pred=y_pred, truth=y_test, class_names=["Female", "Male"], title="KNN", show=True
+        pred=y_pred, truth=y_test, class_names=LABELS, title="Task 01: KNN", show=False
     )
+    plt.show()
 
 def task_02(data):
-    X = data[["身高(cm)", "体重(kg)", "鞋码"]].values.astype(float)
-    y = data["性别"].values.astype(int)
+    X = data[FEATURES].values.astype(float)
+    y = data["sex"].values.astype(int)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
@@ -54,7 +60,8 @@ def task_02(data):
     X_test = scaler.transform(X_test)
 
     # Create KNN classifier
-    for n_neighbors in (1, 3, 5):
+    fig = plt.figure(figsize=(18, 5))
+    for i, n_neighbors in enumerate((1, 3, 5)):
         knn = classifier.KNN(n_neighbors=n_neighbors)
         knn.fit(X_train, y_train)
         y_pred = knn.predict(X_test)
@@ -63,14 +70,17 @@ def task_02(data):
         acc = eval.accuracy(pred=y_pred, truth=y_test)
         f1 = eval.f1_score(pred=y_pred, truth=y_test)
         logger.critical(f"[n_neighbors={n_neighbors}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+
+        ax = plt.subplot(1, 3, i + 1)
         eval.plot_confusion_mat(
-            pred=y_pred, truth=y_test, class_names=["Female", "Male"],
-            title=f"KNN (n_neighbors={n_neighbors})", show=True
+            pred=y_pred, truth=y_test, class_names=LABELS, show=False
         )
+        ax.set_title(f"n_neighbors={n_neighbors}")
+    plt.show()
 
 def task_03(data):
-    X = data[["身高(cm)", "体重(kg)", "鞋码"]].values.astype(float)
-    y = data["性别"].values.astype(int)
+    X = data[FEATURES].values.astype(float)
+    y = data["sex"].values.astype(int)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
@@ -103,7 +113,6 @@ def task_03(data):
         c='b'
     )
     ax.set_title("Data")
-    plt.show()
 
     for _ in range(m):
         # 1. Split the data into s subsets randomly
@@ -149,7 +158,7 @@ def task_03(data):
         c='b'
     )
     ax.set_title("Data")
-    plt.show()
+
     # Create KNN classifier
     knn = classifier.KNN(n_neighbors=3)
     knn.fit(X_train_edited, y_train_edited)
@@ -159,9 +168,12 @@ def task_03(data):
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+
+    plt.figure(figsize=(10, 6))
     eval.plot_confusion_mat(
-        pred=y_pred, truth=y_test, class_names=["Female", "Male"], title=f"KNN", show=True
+        pred=y_pred, truth=y_test, class_names=LABELS, title=f"Task 03", show=True
     )
+    plt.show()
 
 
 if __name__ == "__main__":
