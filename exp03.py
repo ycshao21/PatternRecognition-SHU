@@ -46,14 +46,14 @@ def task_01(data):
     acc_fisher = eval.accuracy(pred=y_pred_fisher, truth=y_test)
     f1_fisher = eval.f1_score(pred=y_pred_fisher, truth=y_test)
     logger.critical(f"[Fisher] Accuracy: {acc_fisher:.4f}, F1 Score: {f1_fisher:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred_fisher, truth=y_test, class_names=["Female", "Male"], title="Fisher", show=True
     )
 
     acc_bayes = eval.accuracy(pred=y_pred_bayes, truth=y_test)
     f1_bayes = eval.f1_score(pred=y_pred_bayes, truth=y_test)
     logger.critical(f"[Bayes] Accuracy: {acc_bayes:.4f}, F1 Score: {f1_bayes:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred_bayes, truth=y_test, class_names=["Female", "Male"], title="Bayes", show=True
     )
 

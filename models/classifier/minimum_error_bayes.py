@@ -1,5 +1,4 @@
 import numpy as np
-import prutils.math as prmath
 from .base_classifier import BaseClassifier
 from prutils.math import distribution as dist
 
@@ -10,6 +9,9 @@ class MinimumErrorBayes(BaseClassifier):
         prior_probs: None | list[float] = None,
         use_parzen: bool = False,
         kernel_name: str = "Gaussian",
+        use_risk: bool = False,
+        risk: np.ndarray = np.array([[0, 1], [1, 0]]),
+        h: float = 15,
     ):
         """
         Initialize the classifier.
@@ -39,8 +41,12 @@ class MinimumErrorBayes(BaseClassifier):
 
         # Using parzen window >>>>>>
         self.use_parzen: bool = use_parzen
+        self.h = h
+        self.use_risk: bool = use_risk
+        self.risk: None | np.ndarray = np.sum(risk, axis=1)
         self.X_train: None | np.ndarray = None
         self.y_train: None | np.ndarray = None
+
         kernel_name = kernel_name.capitalize()
         if kernel_name == "Gaussian":
             self.kernel_func: callable = self.gaussian_kernel
@@ -98,8 +104,6 @@ class MinimumErrorBayes(BaseClassifier):
             for i in range(self.n_classes):
                 self.feature_means[i] = np.mean(X[y == i], axis=0)
                 self.feature_vars[i] = np.var(X[y == i], axis=0)
-                # [ISSUE] jamesnulliu
-                #    Where is my conv function? Performance could be slow when `n_features` is large.
                 self.feature_cov[i] = np.cov(X[y == i], rowvar=False)
         else:
             self.X_train = X
@@ -123,11 +127,11 @@ class MinimumErrorBayes(BaseClassifier):
         """
         if not self.use_parzen:
             conditional_probs = np.prod(
-                dist.normal_distribution(
-                    sample,
-                    mean=self.feature_means,
-                    std=np.sqrt(self.feature_vars)
-                ),
+                np.exp(
+                    -((sample - self.feature_means) ** 2)
+                    / (2.0 * self.feature_vars)
+                )
+                / np.sqrt(2.0 * np.pi * self.feature_vars),
                 axis=1,
             )
         else:
@@ -137,20 +141,25 @@ class MinimumErrorBayes(BaseClassifier):
                         sample,
                         self.X_train[self.y_train == i],
                         self.kernel_func,
+                        self.h,
                     )
                     for i in range(self.n_classes)
                 ]
             )
-
         # Total probability: P(x) = sum(P(x|y) * P(y))
         total_probability = np.sum(
-            self.prior_probs[i] * conditional_probs[i]
-            for i in range(self.n_classes)
+            self.prior_probs[label] * conditional_probs[label]
+            for label in range(self.n_classes)
         )
 
         # Posterior probability: P(y|x) = P(x|y) * P(y) / P(x)
-        posterior_probs = self.prior_probs * conditional_probs / total_probability
-        return posterior_probs
+        posterior_probs = (
+            self.prior_probs * conditional_probs / total_probability
+        )
+        if not self.use_risk:
+            return posterior_probs
+        else:
+            return posterior_probs * self.risk
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -185,7 +194,6 @@ class MinimumErrorBayes(BaseClassifier):
             axis=1,
         )
 
-
     @staticmethod
     def uniform_kernel(x: float):
         if abs(x) < 0.5:
@@ -194,19 +202,26 @@ class MinimumErrorBayes(BaseClassifier):
             return 0.0
 
     @staticmethod
-    def gaussian_kernel(x: float):
-        return np.exp(-(x**2) / 2.0) / np.sqrt(2.0 * np.pi)
+    def gaussian_kernel(x: float | np.ndarray):
+        if isinstance(x, float):
+            x = np.array([x])
+        return np.prod(np.exp(-(x**2) / 2.0) / np.sqrt(2.0 * np.pi))
 
     @staticmethod
-    def parzen_window(x: np.ndarray, data: np.ndarray, kernel_func: callable):
-        N = len(data)
-        d = 1
-        h = 1.06 * np.std(data) * N ** (-1 / (d + 4))
+    def parzen_window(
+        x: np.ndarray, data: np.ndarray, kernel_func: callable, h
+    ) -> float:
+        N = data.shape[0]
+        d = data.shape[1]
+        # h = 1.06 * np.std(data) * N ** (-1 / (d + 4))
         V = h**d
-
-        k = np.sum([kernel_func((xi - x) / h) for xi in data])
-        # print("k:", k)
-        return k / (N * V)
+        if kernel_func.__name__ == "gaussian_kernel":
+            sigma = h / np.sqrt(N)
+            k = np.sum(np.array([kernel_func((xi - x) / sigma) for xi in data]))
+            return k / N
+        else:
+            k = np.sum([kernel_func((xi - x) / h) for xi in data])
+            return k / (N * V)
 
     def multivar_density(
         self, x: np.ndarray, which_class: int = None
@@ -222,7 +237,7 @@ class MinimumErrorBayes(BaseClassifier):
                     self.multivar_density(x, which_class=i)
                     for i in range(self.n_classes)
                 ]
-            ) # Shape: (n_classes, )
+            )  # Shape: (n_classes, )
             self.logger.debug(f"probs: {probs}")
             return probs
         else:
@@ -234,7 +249,7 @@ class MinimumErrorBayes(BaseClassifier):
                 np.exp(-0.5 * (x - miu).T @ np.linalg.inv(cov) @ (x - miu))
                 / (2 * np.pi) ** (self.n_features / 2)
                 / np.sqrt(cov)
-            ) # Shape: (1, 1)
+            )  # Shape: (1, 1)
             prob = prob[0][0]  # Scalar
             self.logger.debug(f"prob: {prob}")
             return prob

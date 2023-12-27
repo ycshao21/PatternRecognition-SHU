@@ -35,7 +35,7 @@ def task_01(data):
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred, truth=y_test, class_names=["Female", "Male"], title="KNN", show=True
     )
 
@@ -63,7 +63,7 @@ def task_02(data):
         acc = eval.accuracy(pred=y_pred, truth=y_test)
         f1 = eval.f1_score(pred=y_pred, truth=y_test)
         logger.critical(f"[n_neighbors={n_neighbors}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-        eval.confusion_mat(
+        eval.plot_confusion_mat(
             pred=y_pred, truth=y_test, class_names=["Female", "Male"],
             title=f"KNN (n_neighbors={n_neighbors})", show=True
         )
@@ -159,7 +159,7 @@ def task_03(data):
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred, truth=y_test, class_names=["Female", "Male"], title=f"KNN", show=True
     )
 

@@ -86,14 +86,14 @@ def task_02(data, model_name: str):
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"[{model_name}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred, truth=y_test, class_names=["Female", "Male"], title=model_name, show=True
     )
 
     acc_PCA = eval.accuracy(pred=y_pred_PCA, truth=y_test)
     f1_PCA = eval.f1_score(pred=y_pred_PCA, truth=y_test)
     logger.critical(f"[{model_name}_PCA] Accuracy: {acc_PCA:.4f}, F1 Score: {f1_PCA:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred_PCA, truth=y_test, class_names=["Female", "Male"], title=f"{model_name}_PCA", show=True
     )
 
@@ -136,7 +136,7 @@ def task_03(data):
     acc_PCA = eval.accuracy(pred=y_pred_PCA, truth=y_test)
     f1_PCA = eval.f1_score(pred=y_pred_PCA, truth=y_test)
     logger.critical(f"[PCA] Accuracy: {acc_PCA:.4f}, F1 Score: {f1_PCA:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred_PCA, truth=y_test, class_names=["Female", "Male"], title="Bayes (PCA)", show=True
     )
 
@@ -144,7 +144,7 @@ def task_03(data):
     acc_FLDA = eval.accuracy(pred=y_pred_FLDA, truth=y_test)
     f1_FLDA = eval.f1_score(pred=y_pred_FLDA, truth=y_test)
     logger.critical(f"[FLDA] Accuracy: {acc_FLDA:.4f}, F1 Score: {f1_FLDA:.4f}")
-    eval.confusion_mat(
+    eval.plot_confusion_mat(
         pred=y_pred_FLDA, truth=y_test, class_names=["Female", "Male"], title=f"Bayes (FLDA)", show=True
     )
 

@@ -20,54 +20,45 @@ def task_01(data: pd.DataFrame) -> None:
     在分类器设计时可以考察采用不同先验概率（如0.5 vs. 0.5, 0.75 vs. 0.25, 0.9 vs. 0.1 等）进行实验，
     考察对决策规则和错误率的影响。
     """
-    features = ("身高(cm)", "体重(kg)", "鞋码")
-    features_en = ("Height", "Weight", "Shoe Size")
+    X = data["身高(cm)"].values.astype(float)
+    y = data["性别"].values.astype(int)
 
-    for feature, feature_en in zip(features, features_en):
-        X = data[feature].values.astype(float)
-        y = data["性别"].values.astype(int)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, shuffle=True
+    )
+    X_train = X_train.reshape(-1, 1)
+    X_test = X_test.reshape(-1, 1)
 
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, shuffle=True
-        )
-        X_train = X_train.reshape(-1, 1)
-        X_test = X_test.reshape(-1, 1)
+    # # Standardize data
+    # scaler = StandardScaler()
+    # scaler.fit(X_train)
+    # X_train = scaler.transform(X_train)
+    # X_test = scaler.transform(X_test)
 
-        # Fit the model
-        model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
-        model.fit(X_train, y_train)
+    # Fit the model
+    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
+    model.fit(X_train, y_train)
 
-        # Test the model
-        y_pred = model.predict(X_test)
-        acc = eval.accuracy(pred=y_pred, truth=y_test)
-        f1 = eval.f1_score(pred=y_pred, truth=y_test)
-        logger.critical(f"{feature} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+    # Test the model
+    y_pred = model.predict(X_test)
+    acc = eval.accuracy(pred=y_pred, truth=y_test)
+    f1 = eval.f1_score(pred=y_pred, truth=y_test)
+    logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+    eval.confusion_mat(
+        pred=y_pred, truth=y_test, class_names=["Female", "Male"], show=True
+    )
 
-        plt.figure(figsize=(16, 6))
-
-        fig1 = plt.subplot(1, 2, 1)
-        eval.plot_confusion_mat(
-            pred=y_pred,
-            truth=y_test,
-            class_names=["Female", "Male"],
-            show=False,
-            fontsize=10,
-        )
-        fig1.set_title("Confusion Matrix", fontsize=12)
-
-        # Visualize the model
-        fig2 = plt.subplot(1, 2, 2)
-        x_min = np.min(X) - 10.0
-        x_max = np.max(X) + 10.0
-        x_range = np.arange(x_min, x_max + 1, 0.5)
-        probs = np.array([model.cal_posterior_probs(x) for x in x_range])
-        plt.plot(x_range, probs[:, 0], label="Female")
-        plt.plot(x_range, probs[:, 1], label="Male")
-        plt.legend()
-        # plt.title(f"Task 01: Decision Boundary - {feature_en}")
-        fig2.set_title("Posterior Probability", fontsize=12)
-
-        plt.show()
+    # Visualize the model
+    xMin, xMax = 140, 200
+    classA, classB = [], []
+    for x in range(xMin, xMax, 1):
+        probA, probB = model.cal_posterior_probs(np.array([x]))
+        classA.append(probA)
+        classB.append(probB)
+    plt.plot(range(xMin, xMax, 1), classA, label="Female")
+    plt.plot(range(xMin, xMax, 1), classB, label="Male")
+    plt.legend()
+    plt.show()
 
 
 def task_02(data: pd.DataFrame) -> None:
@@ -100,47 +91,33 @@ def task_02(data: pd.DataFrame) -> None:
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    plt.figure(figsize=(10, 8))
-    eval.plot_confusion_mat(
-        pred=y_pred,
-        truth=y_test,
-        class_names=["Female", "Male"],
-        title="Task 02: Confusion Matrix - Height & Weight",
-        show=False
+    eval.confusion_mat(
+        pred=y_pred, truth=y_test, class_names=["Female", "Male"], show=True
     )
 
     # Visualize the model (surface)
-    fig2 = plt.figure(figsize=(10, 8))
     xMin, xMax = 140, 200
     yMin, yMax = 20, 100
     X_Mesh, y_Mesh = np.meshgrid(
         np.linspace(xMin, xMax, 100), np.linspace(yMin, yMax, 100)
     )
-
-    ZA = np.zeros((X_Mesh.shape[0], X_Mesh.shape[1]))
-    ZB = np.zeros((X_Mesh.shape[0], X_Mesh.shape[1]))
+    classA, classB = [], []
     for i in range(X_Mesh.shape[0]):
         for j in range(X_Mesh.shape[1]):
-            ZA[i, j] = model.multivar_density(
-                x=np.array([X_Mesh[i, j], y_Mesh[i, j]]), which_class=0
+            probA, probB = model.cal_posterior_probs(
+                np.array([X_Mesh[i, j], y_Mesh[i, j]])
             )
-            ZB[i, j] = model.multivar_density(
-                x=np.array([X_Mesh[i, j], y_Mesh[i, j]]), which_class=1
-            )
+            classA.append(probA)
+            classB.append(probB)
+    classA = np.array(classA).reshape(X_Mesh.shape)
+    classB = np.array(classB).reshape(X_Mesh.shape)
 
-
-    ax = fig2.add_subplot(111, projection="3d")
-    ax.plot_surface(X_Mesh, y_Mesh, ZA, cmap="autumn", alpha=0.6)
-    ax.plot_surface(X_Mesh, y_Mesh, ZB, cmap="winter", alpha=0.6)
-
-    # Adding contour lines to the Z-axis
-    contour_levels = np.linspace(np.min(ZA), np.max(ZB), 20)  # Adjust the number of levels as needed
-    ax.contour(X_Mesh, y_Mesh, ZA, levels=contour_levels, offset=np.min(ZA), cmap="autumn", linestyles="solid")
-    ax.contour(X_Mesh, y_Mesh, ZB, levels=contour_levels, offset=np.min(ZB), cmap="winter", linestyles="solid")
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X_Mesh, y_Mesh, classA, cmap="autumn", alpha=0.6)
+    ax.plot_surface(X_Mesh, y_Mesh, classB, cmap="winter", alpha=0.6)
     ax.set_xlabel("Height")
     ax.set_ylabel("Weight")
-    ax.set_zlabel("Density")
-    ax.set_title("Density of Multivariate Normal Distribution, class")
 
     plt.show()
 
@@ -171,7 +148,7 @@ def task_03(data: pd.DataFrame) -> None:
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.plot_confusion_mat(
+    eval.confusion_mat(
         pred=y_pred, truth=y_test, class_names=["Female", "Male"], show=True
     )
 
@@ -215,7 +192,7 @@ def task_04(data: pd.DataFrame) -> None:
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.plot_confusion_mat(
+    eval.confusion_mat(
         pred=y_pred, truth=y_test, class_names=["Female", "Male"], show=True
     )
 
@@ -230,7 +207,6 @@ def task_04(data: pd.DataFrame) -> None:
     plt.plot(range(xMin, xMax, 1), classB, label="Male_risk")
     plt.legend()
     plt.show()
-
 
 if __name__ == "__main__":
     initialize.init()
