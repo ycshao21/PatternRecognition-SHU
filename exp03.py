@@ -4,11 +4,9 @@ from sklearn.model_selection import train_test_split, LeaveOneOut
 from sklearn.preprocessing import StandardScaler
 import logging
 import matplotlib.pyplot as plt
-
 from models import classifier
 from prutils.math import evaluation as eval
 import initialize
-
 from matplotlib.colors import ListedColormap
 
 logger = logging.getLogger(name="Test")
@@ -30,6 +28,7 @@ def task_01(data):
 
     p = X_train[:, 0]
     q = X_train[:, 1]
+
     # Standardize data
     # scaler = StandardScaler()
     # scaler.fit(X_train)
@@ -74,7 +73,6 @@ def task_01(data):
     # Fisher
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
     fig.suptitle('Decision Boundary Analysis')
-
     # x_min, x_max = -5, 5
     # y_min, y_max = -5, 5
     # x = x_transform[:, 0]
@@ -104,7 +102,6 @@ def task_01(data):
     p1 = ax1.scatter(p[y_train == 0], q[y_train == 0], c="r", s=50, edgecolors="k")
     p2 = ax1.scatter(p[y_train == 1], q[y_train == 1], c="b", s=50, edgecolors="k")
     ax1.legend([p1,p2], sex, loc = 'upper right')
-    # ax1.scatter(p, q, c=y_train, cmap=plt.cm.coolwarm, edgecolors="k")
     ax1.set_title("Fisher")
 
     # Bayes

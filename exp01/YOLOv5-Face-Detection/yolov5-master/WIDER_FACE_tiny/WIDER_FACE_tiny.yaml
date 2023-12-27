@@ -1,5 +1,0 @@
-train: ./WIDER_FACE_tiny/train/images/
-val: ./WIDER_FACE_tiny/val/images/
-
-nc: 1
-names : ['Face']
