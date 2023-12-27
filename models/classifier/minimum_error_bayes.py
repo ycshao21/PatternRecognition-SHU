@@ -31,6 +31,8 @@ class MinimumErrorBayes(BaseClassifier):
         self.n_features: int = None
         self.n_classes: int = None
 
+        self.use_parzen: bool = use_parzen
+
         # Not using parzen window >>>>>>
         self.feature_means: np.ndarray = None  # Shape: (n_classes, n_features)
         self.feature_vars: np.ndarray = None  # Shape: (n_classes, n_features)
@@ -104,6 +106,11 @@ class MinimumErrorBayes(BaseClassifier):
             for i in range(self.n_classes):
                 self.feature_means[i] = np.mean(X[y == i], axis=0)
                 self.feature_vars[i] = np.var(X[y == i], axis=0)
+                # [ISSUE] jamesnulliu
+                #    Where is my conv function? Performance could be slow when `n_features` is large.
+                # [Reply To jamesnulliu] ycshao21 
+                #    There are some logical mistakes and typos in your conv function.
+                # Once they are corrected, the function will be added back.
                 self.feature_cov[i] = np.cov(X[y == i], rowvar=False)
         else:
             self.X_train = X
@@ -127,11 +134,12 @@ class MinimumErrorBayes(BaseClassifier):
         """
         if not self.use_parzen:
             conditional_probs = np.prod(
-                np.exp(
-                    -((sample - self.feature_means) ** 2)
-                    / (2.0 * self.feature_vars)
-                )
-                / np.sqrt(2.0 * np.pi * self.feature_vars),
+                dist.normal_distribution(
+                    sample,
+                    mean=self.feature_means,
+                    std=np.sqrt(self.feature_vars)
+                ),
+                # Shape: (n_classes, )
                 axis=1,
             )
         else:

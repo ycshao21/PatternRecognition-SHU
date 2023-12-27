@@ -45,7 +45,7 @@ def task_01(data: pd.DataFrame) -> None:
 
         plt.figure(figsize=(16, 6))
 
-        fig1 = plt.subplot(1, 2, 1)
+        ax1 = plt.subplot(1, 2, 1)
         eval.plot_confusion_mat(
             pred=y_pred,
             truth=y_test,
@@ -53,19 +53,35 @@ def task_01(data: pd.DataFrame) -> None:
             show=False,
             fontsize=10,
         )
-        fig1.set_title("Confusion Matrix", fontsize=12)
+        ax1.set_title("Confusion Matrix", fontsize=12)
 
         # Visualize the model
-        fig2 = plt.subplot(1, 2, 2)
+        mean0, mean1 = model.feature_means
+        var0, var1 = model.feature_vars
+        a = 1.0 / (2.0 * var0) - 1.0 / (2.0 * var1)
+        b = mean1 / var1 - mean0 / var0
+        c = - mean1 ** 2 / (2 * var1) + mean0 ** 2 / (2 * var0) + np.log(model.prior_probs[0] / model.prior_probs[1])
+
+        # a = var0 - var1
+        # b = 2.0 * (var1 * mean0 - var0 * mean1) 
+        # c = var0 * (mean1 ** 2) - var1 * (mean0 ** 2)
+        # - 2.0 * var0 * var1 * np.log((model.prior_probs[1] * np.sqrt(var0)) / (model.prior_probs[0] * np.sqrt(var1)))
+        poly = np.poly1d([a[0], b[0], c[0]])
+        roots = np.roots(poly)
+
+        ax2 = plt.subplot(1, 2, 2)
         x_min = np.min(X) - 10.0
         x_max = np.max(X) + 10.0
         x_range = np.arange(x_min, x_max + 1, 0.5)
+
         probs = np.array([model.cal_posterior_probs(x) for x in x_range])
         plt.plot(x_range, probs[:, 0], label="Female")
         plt.plot(x_range, probs[:, 1], label="Male")
+        for root in roots:
+            plt.axvline(x=root, c="r", linestyle="--")
+        plt.xlim(x_min, x_max)
         plt.legend()
-        # plt.title(f"Task 01: Decision Boundary - {feature_en}")
-        fig2.set_title("Posterior Probability", fontsize=12)
+        ax2.set_title("Posterior Probability", fontsize=12)
 
         plt.show()
 
@@ -84,12 +100,6 @@ def task_02(data: pd.DataFrame) -> None:
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True
     )
-
-    # # Standardize data
-    # scaler = StandardScaler()
-    # scaler.fit(X_train)
-    # X_train = scaler.transform(X_train)
-    # X_test = scaler.transform(X_test)
 
     # Fit the model
     model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
@@ -111,10 +121,13 @@ def task_02(data: pd.DataFrame) -> None:
 
     # Visualize the model (surface)
     fig2 = plt.figure(figsize=(10, 8))
-    xMin, xMax = 140, 200
-    yMin, yMax = 20, 100
+
+    x_min = np.min(X[:, 0]) - 1
+    x_max = np.max(X[:, 0]) + 1
+    y_min = np.min(X[:, 1]) - 1
+    y_max = np.max(X[:, 1]) + 1
     X_Mesh, y_Mesh = np.meshgrid(
-        np.linspace(xMin, xMax, 100), np.linspace(yMin, yMax, 100)
+        np.linspace(x_min, x_max, 100), np.linspace(y_min, y_max, 100)
     )
 
     ZA = np.zeros((X_Mesh.shape[0], X_Mesh.shape[1]))
@@ -149,43 +162,76 @@ def task_03(data: pd.DataFrame) -> None:
     """
     采用Parzen窗法估计概率密度
     """
-    X = data["身高(cm)"].values.astype(float)
-    y = data["性别"].values.astype(int)
+    features = ("身高(cm)", "体重(kg)", "鞋码")
+    features_en = ("Height", "Weight", "Shoe Size")
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, shuffle=True
-    )
+    for feature, feature_en in zip(features, features_en):
+        X = data[feature].values.astype(float)
+        y = data["性别"].values.astype(int)
 
-    # # Standardize data
-    # scaler = StandardScaler()
-    # scaler.fit(X_train)
-    # X_train = scaler.transform(X_train)
-    # X_test = scaler.transform(X_test)
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, shuffle=True
+        )
+        X_train = X_train.reshape(-1, 1)
+        X_test = X_test.reshape(-1, 1)
 
-    # Fit the model
-    model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=True)
-    model.fit(X_train, y_train)
+        # Fit the model
+        model = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=False)
+        model_parzen = classifier.MinimumErrorBayes(prior_probs=None, use_parzen=True)
+        model.fit(X_train, y_train)
+        model_parzen.fit(X_train, y_train)
 
-    # Test the model
-    y_pred = model.predict(X_test)
-    acc = eval.accuracy(pred=y_pred, truth=y_test)
-    f1 = eval.f1_score(pred=y_pred, truth=y_test)
-    logger.critical(f"Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    eval.plot_confusion_mat(
-        pred=y_pred, truth=y_test, class_names=["Female", "Male"], show=True
-    )
+        # Test the model
+        plt.figure(figsize=(16, 6))
 
-    # Visualize the model
-    xMin, xMax = 140.0, 200.0
-    classA, classB = [], []
-    for x in np.arange(xMin, xMax, 0.5):
-        probA, probB = model.cal_posterior_probs(np.array([x]))
-        classA.append(probA)
-        classB.append(probB)
-    plt.plot(np.arange(xMin, xMax, 0.5), classA, label="Female")
-    plt.plot(np.arange(xMin, xMax, 0.5), classB, label="Male")
-    plt.legend()
-    plt.show()
+        # Not using parzen >>>>>>
+        y_pred = model.predict(X_test)
+        acc = eval.accuracy(pred=y_pred, truth=y_test)
+        f1 = eval.f1_score(pred=y_pred, truth=y_test)
+        logger.critical(f"[No parzen] {feature} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+
+        ax1 = plt.subplot(1, 2, 1)
+        eval.plot_confusion_mat(
+            pred=y_pred,
+            truth=y_test,
+            class_names=["Female", "Male"],
+            show=False
+        )
+        ax1.set_title(f"Not using Parzen")
+        # <<<<<<
+
+        # Using parzen >>>>>>
+        y_pred = model_parzen.predict(X_test)
+        acc = eval.accuracy(pred=y_pred, truth=y_test)
+        f1 = eval.f1_score(pred=y_pred, truth=y_test)
+        logger.critical(f"[Parzen] {feature} - Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+
+        ax2 = plt.subplot(1, 2, 2)
+        eval.plot_confusion_mat(
+            pred=y_pred,
+            truth=y_test,
+            class_names=["Female", "Male"],
+            show=False
+        )
+        ax2.set_title(f"Using Parzen")
+        # <<<<<<
+
+        # Visualize the model
+        x_min = np.min(X) - 10.0
+        x_max = np.max(X) + 10.0
+        x_range = np.arange(x_min, x_max + 1, 0.5)
+        probs = np.array([model.cal_posterior_probs(x) for x in x_range])
+        probs_parzen = np.array([model_parzen.cal_posterior_probs(x) for x in x_range])
+
+        plt.figure(figsize=(10, 8))
+        plt.plot(x_range, probs[:, 0], label="Female (No parzen)", c="chocolate")
+        plt.plot(x_range, probs[:, 1], label="Male (No parzen)", c="mediumblue")
+
+        plt.plot(x_range, probs_parzen[:, 0], label="Female (Parzen)", c="gold")
+        plt.plot(x_range, probs_parzen[:, 1], label="Male (Parzen)", c="deepskyblue")
+        plt.title(f"Task 03: Decision Boundary - {feature_en}")
+        plt.legend()
+        plt.show()
 
 def task_04(data: pd.DataFrame) -> None:
     """
@@ -200,15 +246,9 @@ def task_04(data: pd.DataFrame) -> None:
     X_train = X_train.reshape(-1, 1)
     X_test = X_test.reshape(-1, 1)
 
-    # # Standardize data
-    # scaler = StandardScaler()
-    # scaler.fit(X_train)
-    # X_train = scaler.transform(X_train)
-    # X_test = scaler.transform(X_test)
-
     # Fit the model
     risk = np.array([[0,6],[1,0]])
-    model = classifier.MinimumErrorBayes(prior_probs=None, use_risk=True,risk = risk)
+    model = classifier.MinimumErrorBayes(prior_probs=None, use_risk=True, risk=risk)
     model.fit(X_train, y_train)
     # Test the model
     y_pred = model.predict(X_test)
@@ -220,14 +260,11 @@ def task_04(data: pd.DataFrame) -> None:
     )
 
     # Visualize the model
-    xMin, xMax = 40, 100
-    classA, classB = [], []
-    for x in range(xMin, xMax, 1):
-        riskA, riskB = model.cal_posterior_probs(np.array([x]))
-        classA.append(riskA)
-        classB.append(riskB)
-    plt.plot(range(xMin, xMax, 1), classA, label="Female_risk")
-    plt.plot(range(xMin, xMax, 1), classB, label="Male_risk")
+    x_min, x_max = np.min(X) - 1, np.max(X) + 1
+    x_range = np.arange(x_min, x_max + 1, 0.5)
+    probs = np.array([model.cal_posterior_probs(x) for x in x_range])
+    plt.plot(range(x_min, x_max, 1), probs[:, 0], label="Female_risk")
+    plt.plot(range(x_min, x_max, 1), probs[:, 1], label="Male_risk")
     plt.legend()
     plt.show()
 
