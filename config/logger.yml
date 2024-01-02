@@ -6,7 +6,7 @@ Test:
   level: DEBUG
   to_console: true
   save_path: log/test.log
-  mode: w
+  mode: a
 
 PRClassifier:
   level: INFO

@@ -5,33 +5,34 @@ class BaseDecomposition:
         self.n_components = n_components
         self.eigenvectors = None
     
-    def fit(self, mat: np.ndarray) -> None:
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         raise NotImplementedError
     
-    def transform(self, mat: np.ndarray) -> np.ndarray:
-        return np.dot(mat, self.eigenvectors)
-    
-    def fit_transform(self, mat: np.ndarray) -> np.ndarray:
-        self.fit(mat)
-        return self.transform(mat)
+    def transform(self, X: np.ndarray) -> np.ndarray:
+        return X @ self.eigenvectors
+
 
 
 class PCA(BaseDecomposition):
     def __init__(self, n_components: int = 2):
         super().__init__(n_components)
     
-    def fit(self, mat: np.ndarray) -> None:
-        cov = np.cov(mat, rowvar=False)
+    def fit(self, X: np.ndarray) -> None:
+        cov = np.cov(X, rowvar=False)
         eigenvalues, eigenvectors = np.linalg.eig(cov)
         idx = np.argsort(eigenvalues)[::-1][:self.n_components]
         self.eigenvectors = eigenvectors[:, idx]
-   
+       
+    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+        self.fit(X)
+        return self.transform(X)
+
 
 class FLDA(BaseDecomposition):
     def __init__(self, n_components: int = 2):
         super().__init__(n_components)
     
-    def fit(self, X: np.ndarray, y) -> None:
+    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
         n_classes = len(np.unique(y))
         if n_classes != 2:
             raise ValueError(
@@ -69,3 +70,7 @@ class FLDA(BaseDecomposition):
         eigenvalues, eigenvectors = np.linalg.eig(np.dot(np.linalg.inv(S_w), S_b))
         idx = np.argsort(eigenvalues)[::-1][:self.n_components]
         self.eigenvectors = eigenvectors[:, idx]
+
+    def fit_transform(self, X: np.ndarray, y: np.ndarray) -> np.ndarray:
+        self.fit(X, y)
+        return self.transform(X)
