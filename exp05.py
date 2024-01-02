@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 import logging
 from models import classifier
-from prutils.math import evaluation as eval 
+from prutils.math import evaluation as eval
 import initialize
 
 logger = logging.getLogger(name="Test")
@@ -48,6 +48,7 @@ def task_01(data):
 
     plt.show()
 
+
 def task_02(data):
     X = data[FEATURES].values.astype(float)
     y = data["sex"].values.astype(int)
@@ -76,7 +77,9 @@ def task_02(data):
         # Check accuracy of our model on the test data
         acc = eval.accuracy(pred=y_pred, truth=y_test)
         f1 = eval.f1_score(pred=y_pred, truth=y_test)
-        logger.critical(f"[n_neighbors={n_neighbors}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
+        logger.critical(
+            f"[n_neighbors={n_neighbors}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}"
+        )
 
         # Confusion matrix
         ax_cm = plt.subplot(2, 3, i + 1)
@@ -89,13 +92,14 @@ def task_02(data):
     for n_neighbors, y_score in zip(n_neighbors_list, y_scores):
         fpr, tpr, _ = roc_curve(y_test, y_score)
         plt.plot(fpr, tpr, label=f"n_neighbors={n_neighbors}")
-    plt.plot([0, 1], [0, 1], linestyle="--", label="Random Guess", color='black')
+    plt.plot([0, 1], [0, 1], linestyle="--", label="Random Guess", color="black")
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
     plt.title("ROC Curve")
     plt.legend()
 
     plt.show()
+
 
 def task_03(data):
     X = data[FEATURES].values.astype(float)
@@ -112,12 +116,13 @@ def task_03(data):
     X_test = scaler.transform(X_test)
 
     # Sample editing
-
+    knn = classifier.KNN(n_neighbors=3)
+    knn._fit_multi_edit(X_train, y_train, s=3)
 
 
 if __name__ == "__main__":
     initialize.init()
     data = pd.read_csv("dataset/genderdata/preprocessed/all.csv")
-    task_01(data)
-    task_02(data)
+    # task_01(data)
+    # task_02(data)
     task_03(data)
