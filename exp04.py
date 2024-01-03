@@ -3,7 +3,6 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve
 
@@ -97,8 +96,6 @@ def task_02(data, model_name: str):
     acc = eval.accuracy(pred=y_pred, truth=y_test)
     f1 = eval.f1_score(pred=y_pred, truth=y_test)
     logger.critical(f"[{model_name}_Raw] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-    roc = roc_curve(y_test, y_pred)
-    print(roc)
 
     ax1 = plt.subplot(131)
     eval.plot_confusion_mat(
@@ -146,6 +143,28 @@ def task_02(data, model_name: str):
     )
     ax3.set_title("PCA (sklearn)")
     # <<<<<<
+
+    # ROC
+    n_components_list = [1, 2, 3]
+    plt.figure(figsize=(10, 6))
+    plt.title("ROC Curve")
+    for n_components in n_components_list:
+        pca = decomposition.PCA(n_components=n_components)
+        pca.fit(X_train)
+        X_train_PCA = pca.transform(X_train)
+        X_test_PCA = pca.transform(X_test)
+
+        if model_name == 'Fisher':
+            model_PCA = classifier.Fisher()
+        elif model_name == 'Bayes':
+            model_PCA = classifier.MinimumErrorBayes()
+
+        model_PCA.fit(X_train_PCA, y_train)
+        y_score = model_PCA.predict_prob(X_test_PCA)
+
+        fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
+        plt.plot(fpr, tpr, label=f"PCA (n_components={n_components})")
+    plt.legend()
     plt.show()
 
 def task_03(data):
@@ -174,14 +193,14 @@ def task_03(data):
     model = classifier.MinimumErrorBayes()
     model.fit(X_train_PCA, y_train)
 
-    y_pred = model.predict(X_test_PCA)
-    acc = eval.accuracy(pred=y_pred, truth=y_test)
-    f1 = eval.f1_score(pred=y_pred, truth=y_test)
+    y_pred_PCA = model.predict(X_test_PCA)
+    acc = eval.accuracy(pred=y_pred_PCA, truth=y_test)
+    f1 = eval.f1_score(pred=y_pred_PCA, truth=y_test)
     logger.critical(f"[PCA] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
 
     ax1 = plt.subplot(1, 2, 1)
     eval.plot_confusion_mat(
-        pred=y_pred, truth=y_test, class_names=LABELS, show=False
+        pred=y_pred_PCA, truth=y_test, class_names=LABELS, show=False
     )
     ax1.set_title("PCA")
     # <<<<<<
@@ -195,17 +214,31 @@ def task_03(data):
     model = classifier.MinimumErrorBayes()
     model.fit(X_train_FLDA, y_train)
 
-    y_pred = model.predict(X_test_FLDA)
-    acc = eval.accuracy(pred=y_pred, truth=y_test)
-    f1 = eval.f1_score(pred=y_pred, truth=y_test)
+    y_pred_FLDA = model.predict(X_test_FLDA)
+    acc = eval.accuracy(pred=y_pred_FLDA, truth=y_test)
+    f1 = eval.f1_score(pred=y_pred_FLDA, truth=y_test)
     logger.critical(f"[FLDA] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
 
     ax2 = plt.subplot(1, 2, 2)
     eval.plot_confusion_mat(
-        pred=y_pred, truth=y_test, class_names=LABELS, show=False
+        pred=y_pred_FLDA, truth=y_test, class_names=LABELS, show=False
     )
     ax2.set_title("FLDA")
     # <<<<<<
+
+    # Visualize data
+    fig = plt.figure(figsize=(12, 6))
+    fig.suptitle("Task 03")
+
+    ax1 = plt.subplot(121)
+    ax1.set_title("PCA")
+    ax1.scatter(X_train_PCA[y_train == 0][:, 0], X_train_PCA[y_train == 0][:, 1], c='r')
+    ax1.scatter(X_train_PCA[y_train == 1][:, 0], X_train_PCA[y_train == 1][:, 1], c='b')
+
+    ax2 = plt.subplot(122)
+    ax2.set_title("FLDA")
+    ax2.scatter(X_train_FLDA[y_train == 0][:, 0], X_train_FLDA[y_train == 0][:, 1], c='r')
+    ax2.scatter(X_train_FLDA[y_train == 1][:, 0], X_train_FLDA[y_train == 1][:, 1], c='b')
 
     plt.show()
 
