@@ -118,16 +118,54 @@ def task_03(data):
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
 
+    n_neighbors = 3
+    knn = classifier.KNN(n_neighbors=n_neighbors)
+    knn.fit(X_train, y_train)
+
+    # Check accuracy of our model on the test data
+    y_pred = knn.predict(X_test)
+    acc = eval.accuracy(pred=y_pred, truth=y_test)
+    f1 = eval.f1_score(pred=y_pred, truth=y_test)
+    logger.critical(
+        f"[Basic - n_neighbors={n_neighbors}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}"
+    )
+
+    fig = plt.figure(figsize=(16, 8))
+    fig.suptitle(f"Task03 (n_neighbors={n_neighbors})")
+
+    # Confusion matrix
+    ax1 = fig.add_subplot(1, 2, 1)
+    eval.plot_confusion_mat(
+        pred=y_pred, truth=y_test, class_names=LABELS, show=False
+    )
+    ax1.set_title("Basic")
+
     # Sample editing
-    knn = classifier.KNN(n_neighbors=20)
+    knn = classifier.KNN(n_neighbors=n_neighbors)
     knn.fit(
         X_train,
         y_train,
         method="multi-edit",
         split=3,
         target_count_of_no_misclassified=3,
-        whether_visualize=True,
+        whether_visualize=False,
     )
+
+    # Check accuracy of our model on the test data
+    y_pred = knn.predict(X_test)
+    acc = eval.accuracy(pred=y_pred, truth=y_test)
+    f1 = eval.f1_score(pred=y_pred, truth=y_test)
+    logger.critical(
+        f"[MULTIEDIT - n_neighbors={n_neighbors}] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}"
+    )
+
+    # Confusion matrix
+    ax2 = fig.add_subplot(1, 2, 2)
+    eval.plot_confusion_mat(
+        pred=y_pred, truth=y_test, class_names=LABELS, show=False
+    )
+    ax2.set_title("MULTIEDIT")
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -135,4 +173,4 @@ if __name__ == "__main__":
     data = pd.read_csv("dataset/genderdata/preprocessed/all.csv")
     task_01(data)
     task_02(data)
-    # task_03(data)
+    task_03(data)

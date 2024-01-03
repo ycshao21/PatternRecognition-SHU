@@ -132,7 +132,6 @@ class KNN(BaseClassifier):
         epoch = 0
         continuous_count_of_no_misclassfied = 0
         while True:
-            print(f"epoch: {epoch}")
             # Part `it` is the part to edit
             X_edit, y_edit = X_parts[current_s], y_parts[current_s]
             # Other parts are used as training data

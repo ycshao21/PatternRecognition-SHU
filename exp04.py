@@ -86,8 +86,9 @@ def task_02(data, model_name: str):
         raise ValueError("Invalid model name.")
 
     # Test the model
+    n_components = 2
     fig = plt.figure(figsize=(18, 5))
-    fig.suptitle("Task 02")
+    fig.suptitle(f"Task 02 - n_components={n_components}")
 
     # 1. Not using PCA >>>>>>
     model.fit(X_train, y_train)
@@ -105,7 +106,7 @@ def task_02(data, model_name: str):
     # <<<<<<
 
     # 2. Using PCA >>>>>>
-    pca = decomposition.PCA(n_components=2)
+    pca = decomposition.PCA(n_components=n_components)
     pca.fit(X_train)
     X_train_PCA = pca.transform(X_train)
     X_test_PCA = pca.transform(X_test)
@@ -125,7 +126,7 @@ def task_02(data, model_name: str):
     # <<<<<<
 
     # 3. Using PCA (sklearn) >>>>>>
-    pca_skl = PCA(n_components=2)
+    pca_skl = PCA(n_components=n_components)
     pca_skl.fit(X_train)
     X_train_PCA_skl = pca_skl.transform(X_train)
     X_test_PCA_skl = pca_skl.transform(X_test)
@@ -181,11 +182,12 @@ def task_03(data):
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
 
+    n_components = 2
     fig = plt.figure(figsize=(16, 6))
-    fig.suptitle("Task 03: Bayes")
+    fig.suptitle(f"Task 03: Bayes - n_components={n_components}")
 
     # PCA >>>>>>
-    pca = decomposition.PCA(n_components=2)
+    pca = decomposition.PCA(n_components=n_components)
     pca.fit(X_train)
     X_train_PCA = pca.transform(X_train)
     X_test_PCA = pca.transform(X_test)
@@ -228,7 +230,7 @@ def task_03(data):
 
     # Visualize data
     fig = plt.figure(figsize=(12, 6))
-    fig.suptitle("Task 03")
+    fig.suptitle(f"Task 03 - n_components={n_components}")
 
     ax1 = plt.subplot(121)
     ax1.set_title("PCA")
