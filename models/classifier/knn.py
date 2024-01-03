@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 from matplotlib.colors import ListedColormap
 import PIL
 import os
+import cv2
 
 from .base_classifier import BaseClassifier
 
@@ -42,6 +43,7 @@ class KNN(BaseClassifier):
             Method to use. Default: "basic".
             "basic": Basic KNN.
             "multi-edit": Multi-edit KNN.
+            "condense": Condense KNN.
 
         Keyword Arguments
         -----------------
@@ -53,7 +55,7 @@ class KNN(BaseClassifier):
             ONLY used when `method` is "multi-edit".
         whether_visualize : bool
             Whether to visualize the process.
-            ONLY used when `method` is "multi-edit".
+            ONLY used when `method` is {"multi-edit", "condense"}.
         """
         self.method = method
         if self.method == "basic":
@@ -71,6 +73,8 @@ class KNN(BaseClassifier):
             self._check_labels(labels, self.n_classes)
         elif self.method == "multi-edit":
             self._fit_multi_edit(X, y, **kwargs)
+        elif self.method == "condense":
+            self._fit_condense(X, y, **kwargs)
 
     def _fit_multi_edit(
         self,
@@ -99,7 +103,7 @@ class KNN(BaseClassifier):
             axis_0_min, axis_0_max = X[:, 0].min() - 0.5, X[:, 0].max() + 0.5
             axis_1_min, axis_1_max = X[:, 1].min() - 0.5, X[:, 1].max() + 0.5
             # [ToDo]: Extend the color list for multi-class classification
-            scatter_colors = np.array(["#183E0C", "#58135E", "#8c564b"])
+            scatter_colors = np.array(["#439956", "#58135E"])
             decision_boundary_bkg_color = ListedColormap(["#DEF2FF", "#FFFED8"])
             # Remove `temp_frame_dir` if it exist
             if os.path.exists(temp_frame_dir):
@@ -135,8 +139,12 @@ class KNN(BaseClassifier):
             # Part `it` is the part to edit
             X_edit, y_edit = X_parts[current_s], y_parts[current_s]
             # Other parts are used as training data
-            X_train = np.concatenate(X_parts[:current_s] + X_parts[current_s + 1 :])
-            y_train = np.concatenate(y_parts[:current_s] + y_parts[current_s + 1 :])
+            X_train = np.concatenate(
+                X_parts[:current_s] + X_parts[current_s + 1 :]
+            )
+            y_train = np.concatenate(
+                y_parts[:current_s] + y_parts[current_s + 1 :]
+            )
             # Fit the classifier
             self.fit(
                 X_train,
@@ -155,8 +163,6 @@ class KNN(BaseClassifier):
                 ax.set_xlim(axis_0_min, axis_0_max)
                 ax.set_ylim(axis_1_min, axis_1_max)
                 ax.set_title(f"KNN (n_neighbors={self.n_neighbors})")
-                ax.set_xlabel("x")
-                ax.set_ylabel("y")
                 ax.set_aspect("equal")
 
                 # Create a meshgrid to plot decision boundaries
@@ -169,85 +175,29 @@ class KNN(BaseClassifier):
                 # Get predictions for each point in the meshgrid
                 Z = self.predict(np.c_[xx.ravel(), yy.ravel()])
                 Z = Z.reshape(xx.shape)
-                ax.contourf(xx, yy, Z, cmap=decision_boundary_bkg_color, alpha=1)
+                ax.contourf(
+                    xx, yy, Z, cmap=decision_boundary_bkg_color, alpha=1
+                )
 
+                # fmt: off
                 # Trian data: o, Test data: ^, Misclassified: square, Color: base on label
-                ax.scatter(
-                    X_train[:, 0],
-                    X_train[:, 1],
-                    facecolors="none",
-                    edgecolors=scatter_colors[y_train],
-                    marker="o",
-                    s=15,
-                )
-                ax.scatter(
-                    X_edit[:, 0],
-                    X_edit[:, 1],
-                    facecolors="none",
-                    edgecolors=scatter_colors[y_edit],
-                    marker="^",
-                    s=15,
-                )
-                ax.scatter(
-                    X_edit[misclassified_indices, 0],
-                    X_edit[misclassified_indices, 1],
-                    c="r",
-                    marker="x",
-                    s=30,
-                )
+                ax.scatter(X_train[:, 0], X_train[:, 1], facecolors="none", edgecolors=scatter_colors[y_train], marker="o", s=15,)
+                ax.scatter(X_edit[:, 0], X_edit[:, 1], facecolors="none", edgecolors=scatter_colors[y_edit], marker="^", s=15,)
+                ax.scatter(X_edit[misclassified_indices, 0], X_edit[misclassified_indices, 1], c="r", marker="x", s=30,)
                 class_labels = ["Boy", "Girl", "Splited Train", "Splited Test (Edit)", "Misclassified"]
                 markersize=6
                 legend_elements = [
-                    plt.Line2D(
-                        [0],
-                        [0],
-                        marker="s",
-                        color=scatter_colors[0],
-                        label=class_labels[0],
-                        markersize=markersize,
-                        linestyle="None"
-                    ),
-                    plt.Line2D(
-                        [0],
-                        [0],
-                        marker="s",
-                        color=scatter_colors[1],
-                        label=class_labels[1],
-                        markersize=markersize,
-                        linestyle="None"
-                    ),
-                    plt.Line2D(
-                        [0],
-                        [0],
-                        marker="o",
-                        markerfacecolor="none",
-                        markeredgecolor="black",
-                        label=class_labels[2],
-                        markersize=markersize,
-                        linestyle="None"
-                    ),
-                    plt.Line2D(
-                        [0],
-                        [0],
-                        marker="^",
-                        markerfacecolor="none",
-                        markeredgecolor="black",
-                        label=class_labels[3],
-                        markersize=markersize,
-                        linestyle="None"
-                    ),
-                    plt.Line2D(
-                        [0],
-                        [0],
-                        marker="x",
-                        color="r",
-                        label=class_labels[4],
-                        markersize=markersize,
-                        linestyle="None"
-                    ),
+                    plt.Line2D([0], [0], marker="s", color=scatter_colors[0], label=class_labels[0], markersize=markersize, linestyle="None"),
+                    plt.Line2D([0], [0], marker="s", color=scatter_colors[1], label=class_labels[1], markersize=markersize, linestyle="None"),
+                    plt.Line2D([0], [0], marker="o", markerfacecolor="none", markeredgecolor="black", label=class_labels[2], markersize=markersize, linestyle="None"),
+                    plt.Line2D([0], [0], marker="^", markerfacecolor="none", markeredgecolor="black", label=class_labels[3], markersize=markersize, linestyle="None"),
+                    plt.Line2D([0], [0], marker="x", color="r", label=class_labels[4], markersize=markersize, linestyle="None"),
                 ]
+                # fmt: on
 
-                plt.legend(handles=legend_elements, fontsize="small", loc="upper left")
+                plt.legend(
+                    handles=legend_elements, fontsize="small", loc="upper left"
+                )
                 # Save the initial frame
                 fig.savefig(f"{temp_frame_dir}/frame_{epoch}.png")
                 plt.close()
@@ -258,11 +208,18 @@ class KNN(BaseClassifier):
                 if len(misclassified_indices) == 0
                 else 0
             )
-            if continuous_count_of_no_misclassfied == target_count_of_no_misclassified:
+            if (
+                continuous_count_of_no_misclassfied
+                == target_count_of_no_misclassified
+            ):
                 break
             # Drop the misclassified samples
-            X_parts[current_s] = np.delete(X_parts[current_s], misclassified_indices, 0)
-            y_parts[current_s] = np.delete(y_parts[current_s], misclassified_indices, 0)
+            X_parts[current_s] = np.delete(
+                X_parts[current_s], misclassified_indices, 0
+            )
+            y_parts[current_s] = np.delete(
+                y_parts[current_s], misclassified_indices, 0
+            )
             current_s = (current_s + 1) % split
             epoch += 1
 
@@ -279,7 +236,140 @@ class KNN(BaseClassifier):
             ani = animation.FuncAnimation(
                 fig, update_frame, frames=epoch + 1, interval=1000, repeat=True
             )
-            ani.save(f"{outputdir}animation_{self.n_neighbors}.gif", writer="pillow", fps=1)
+            ani.save(
+                f"Multi-edit_animation_{self.n_neighbors}.gif", writer="pillow", fps=1
+            )
+
+    def _fit_condense(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        temp_frame_dir: str = "temp_frames",
+        whether_visualize: bool = True,
+        **kwargs,
+    ) -> None:
+        n_samples = X.shape[0]
+        # Shuffle and split X to s parts
+        indices = np.arange(n_samples)
+        np.random.shuffle(indices)
+        X, y = X[indices], y[indices]
+
+        # Select The first sample with class 0 and the first sample with class 1,
+        # Store into Xs
+        Xs = np.array([X[np.where(y == 0)][0], X[np.where(y == 1)][0]])
+        ys = np.array([0, 1])
+        # Remove the selected samples from X and y
+        Xg = np.delete(X, [np.where(y == 0)[0][0], np.where(y == 1)[0][0]], 0)
+        yg = np.delete(y, [np.where(y == 0)[0][0], np.where(y == 1)[0][0]], 0)
+
+        if whether_visualize:
+            # >>>>>> Preparation for the animation >>>>>>
+            axis_0_min, axis_0_max = X[:, 0].min() - 0.5, X[:, 0].max() + 0.5
+            axis_1_min, axis_1_max = X[:, 1].min() - 0.5, X[:, 1].max() + 0.5
+            # [ToDo]: Extend the color list for multi-class classification
+            scatter_colors = np.array(["#439956", "#58135E"])
+            decision_boundary_bkg_color = ListedColormap(["#DEF2FF", "#FFFED8"])
+            # Remove `temp_frame_dir` if it exist
+            # if os.path.exists(temp_frame_dir):
+            #     if os.name == "posix":
+            #         os.system(f"rm -rf {temp_frame_dir}")
+            #     elif os.name == "nt":
+            #         os.system(f"rmdir /s /q {temp_frame_dir}")
+            # Create `temp_frame_dir` to store frames
+            os.makedirs(temp_frame_dir, exist_ok=True)
+            # Plot the decision boundaries
+
+            # This function is tool for getting and plotting each frame in the dir
+            def update_frame(i):
+                img = PIL.Image.open(f"{temp_frame_dir}/frame_{i}.png")
+                ax.imshow(img)
+                # Print the frame number
+                ax.text(
+                    axis_0_min,
+                    axis_1_max,
+                    f"Frame: {i}",
+                    bbox=dict(facecolor="white", alpha=1),
+                )
+                plt.tight_layout()
+                plt.axis("off")
+        epoch = 190
+        moved = True
+        epoch = 0
+        while moved:
+            if Xg.shape[0] == 0:
+                break
+            moved = False
+            # Fit the classifier with (Xs, ys)
+            self.fit(Xs, ys, method="basic")
+            # Go through all the samples in (Xg, yg)
+            for i, (x, y) in enumerate(zip(Xg, yg)):
+                # Predict the label of the sample
+                y_pred = self.predict(x.reshape(1, -1))
+                # If the sample is misclassified
+                if y_pred != y:
+                    misclassified_index = i
+                    if whether_visualize:
+                        # Create a frame for current iteration
+                        fig = plt.figure(figsize=(6, 6), dpi=200)
+                        ax = plt.axes()
+                        ax.set_xlim(axis_0_min, axis_0_max)
+                        ax.set_ylim(axis_1_min, axis_1_max)
+                        ax.set_title(f"KNN (n_neighbors={self.n_neighbors})")
+                        ax.set_aspect("equal")
+                        # Create a meshgrid to plot decision boundaries
+                        h = 0.02  # Step size in the mesh
+                        xx, yy = np.meshgrid(
+                            np.arange(axis_0_min, axis_0_max, h),
+                            np.arange(axis_1_min, axis_1_max, h),
+                        )
+                        # Get predictions for each point in the meshgrid
+                        Z = self.predict(np.c_[xx.ravel(), yy.ravel()])
+                        Z = Z.reshape(xx.shape)
+                        ax.contourf(
+                            xx, yy, Z, cmap=decision_boundary_bkg_color, alpha=1
+                        )
+                        # fmt: off
+                        # Trian data: o, Test data: ^, Misclassified: square, Color: base on label
+                        ax.scatter(Xs[:, 0], Xs[:, 1], facecolors="none", edgecolors=scatter_colors[ys], marker="o", s=15,)
+                        ax.scatter(Xg[:, 0], Xg[:, 1], facecolors="none", edgecolors=scatter_colors[yg], marker="^", s=15,)
+                        ax.scatter(Xg[misclassified_index, 0], Xg[misclassified_index, 1], c="r", marker="x", s=30,)
+                        class_labels = ["Boy", "Girl", "Xs", "Xg", "Misclassified in Xg"]
+                        markersize=6
+                        legend_elements = [
+                            plt.Line2D([0], [0], marker="s", color=scatter_colors[0], label=class_labels[0], markersize=markersize, linestyle="None"),
+                            plt.Line2D([0], [0], marker="s", color=scatter_colors[1], label=class_labels[1], markersize=markersize, linestyle="None"),
+                            plt.Line2D([0], [0], marker="o", markerfacecolor="none", markeredgecolor="black", label=class_labels[2], markersize=markersize, linestyle="None"),
+                            plt.Line2D([0], [0], marker="^", markerfacecolor="none", markeredgecolor="black", label=class_labels[3], markersize=markersize, linestyle="None"),
+                            plt.Line2D([0], [0], marker="x", color="r", label=class_labels[4], markersize=markersize, linestyle="None"),
+                        ]
+                        # fmt: on
+                        plt.legend(
+                            handles=legend_elements, fontsize="small", loc="upper left"
+                        )
+                        # Save the initial frame
+                        fig.savefig(f"{temp_frame_dir}/frame_{epoch}.png")
+                        plt.close()
+                    
+                    # Move the misclassified sample from (Xg, yg) to (Xs, ys)
+                    Xs = np.concatenate([Xs, x.reshape(1, -1)])
+                    ys = np.concatenate([ys, y.reshape(1, )])
+                    Xg = np.delete(Xg, misclassified_index, 0)
+                    yg = np.delete(yg, misclassified_index, 0)
+                    moved = True
+                    break
+            epoch = epoch + 1
+
+        # # Overall fitting
+        # self.fit(Xs, ys, method="basic")
+
+        if whether_visualize:
+            fig, ax = plt.subplots(figsize=(6, 6), dpi=200)
+            ani = animation.FuncAnimation(
+                fig, update_frame, frames=epoch + 1, interval=1000, repeat=True
+            )
+            ani.save(
+                f"Condense_animation_{self.n_neighbors}.gif", writer="pillow", fps=20
+            )
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -354,3 +444,31 @@ class KNN(BaseClassifier):
         label_counts = np.bincount(k_nearest_labels)
         # Return the label with the most counts.
         return np.argmax(label_counts)
+
+    @staticmethod
+    def create_gif_opencv(input_folder, output_file, fps=20):
+        images = []
+
+        for filename in sorted(os.listdir(input_folder)):
+            if filename.endswith(".png") or filename.endswith(".jpg"):
+                filepath = os.path.join(input_folder, filename)
+                img = cv2.imread(filepath)
+                frame_number = int(filename.split('.')[0].split('_')[-1])
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                text = f'Frame {frame_number}'
+                org = (10, 30)
+                font_scale = 1
+                color = (255, 255, 255)
+                thickness = 2
+                img = cv2.putText(img, text, org, font, font_scale, color, thickness, cv2.LINE_AA)
+                images.append(img)
+
+        height, width, _ = images[0].shape
+
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        out = cv2.VideoWriter(output_file, fourcc, fps, (width, height))
+
+        for img in images:
+            out.write(img)
+
+        out.release()

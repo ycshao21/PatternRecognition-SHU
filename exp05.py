@@ -149,6 +149,9 @@ def task_03(data):
         split=3,
         target_count_of_no_misclassified=3,
         whether_visualize=False,
+        # method="condense",
+        # temp_frame_dir="temp_frames",
+        # whether_visualize=True,
     )
 
     # Check accuracy of our model on the test data
@@ -174,3 +177,4 @@ if __name__ == "__main__":
     task_01(data)
     task_02(data)
     task_03(data)
+    # classifier.KNN.create_gif_opencv("temp_frames", "out.avi")
