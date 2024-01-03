@@ -102,7 +102,7 @@ def task_02(data):
 
 
 def task_03(data):
-    X = data[FEATURES].values.astype(float)
+    X = data[FEATURES[:2]].values.astype(float)
     y = data["sex"].values.astype(int)
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -117,7 +117,14 @@ def task_03(data):
 
     # Sample editing
     knn = classifier.KNN(n_neighbors=3)
-    knn._fit_multi_edit(X_train, y_train, s=3)
+    knn.fit(
+        X_train,
+        y_train,
+        method="multi-edit",
+        split=3,
+        target_count_of_no_misclassified=3,
+        whether_visualize=True,
+    )
 
 
 if __name__ == "__main__":

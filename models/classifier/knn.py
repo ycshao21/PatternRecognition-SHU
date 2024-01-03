@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.colors import ListedColormap
 import PIL
 import os
 
@@ -23,7 +24,9 @@ class KNN(BaseClassifier):
         self.n_neighbors = n_neighbors
         self.n_classes: int = None
 
-    def fit(self, X: np.ndarray, y: np.ndarray, **kwargs) -> None:
+    def fit(
+        self, X: np.ndarray, y: np.ndarray, method: str = "basic", **kwargs
+    ) -> None:
         """
         Fit the classifier.
 
@@ -35,54 +38,98 @@ class KNN(BaseClassifier):
         y : np.ndarray
             Labels.
             Shape: (n_samples, ).
+        method : str
+            Method to use. Default: "basic".
+            "basic": Basic KNN.
+            "multi-edit": Multi-edit KNN.
+
+        Keyword Arguments
+        -----------------
+        split : int
+            Number of parts to split the training data.
+            ONLY used when `method` is "multi-edit".
+        target_count_of_no_misclassified : int
+            Target count of continuous iterations that have no misclassified samples.
+            ONLY used when `method` is "multi-edit".
+        whether_visualize : bool
+            Whether to visualize the process.
+            ONLY used when `method` is "multi-edit".
         """
-        self.X_train = self._convert_to_2D_array(X)
-        self.y_train = y
+        self.method = method
+        if self.method == "basic":
+            self.X_train = self._convert_to_2D_array(X)
+            self.y_train = y
 
-        self.n_features = self.X_train.shape[1]
-        labels = np.unique(y)
-        self.n_classes = len(labels)
+            self.n_features = self.X_train.shape[1]
+            labels = np.unique(y)
+            self.n_classes = len(labels)
 
-        if self.n_classes != 2:
-            raise ValueError(
-                "The classifier only supports binary classification for now."
-            )
-        self._check_labels(labels, self.n_classes)
+            if self.n_classes != 2:
+                raise ValueError(
+                    "The classifier only supports binary classification for now."
+                )
+            self._check_labels(labels, self.n_classes)
+        elif self.method == "multi-edit":
+            self._fit_multi_edit(X, y, **kwargs)
 
-    def _fit_multi_edit(self, X: np.ndarray, y: np.ndarray, s: int, **kwargs) -> None:
-
+    def _fit_multi_edit(
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        split: int,
+        target_count_of_no_misclassified: int = 3,
+        temp_frame_dir: str = "temp_frames",
+        whether_visualize: bool = True,
+        **kwargs,
+    ) -> None:
         n_samples = X.shape[0]
-        if s < 1 or s > n_samples:
+        if split < 1 or split > n_samples:
             raise ValueError("s must be between 1 and n_samples.")
         # Shuffle and split X to s parts
         indices = np.arange(n_samples)
         np.random.shuffle(indices)
         X = X[indices]
         y = y[indices]
-        X_parts = np.array_split(X, s)
-        y_parts = np.array_split(y, s)
+        X_parts = np.array_split(X, split)
+        y_parts = np.array_split(y, split)
 
-        whether_visualize = kwargs.get("visualize", True)
         if whether_visualize:
             # >>>>>> Preparation for the animation >>>>>>
-            axis_0_min, axis_1_max = X[:, 0].min(), X[:, 0].max()
+            axis_0_min, axis_0_max = X[:, 0].min(), X[:, 0].max()
             axis_1_min, axis_1_max = X[:, 1].min(), X[:, 1].max()
-            temp_frame_dir = kwargs.get("temp_frame_dir", "./temp_frames")
+            # [ToDo]: Extend the color list for multi-class classification
+            scatter_colors = np.array(["#183E0C", "#58135E", "#8c564b"])
+            decision_boundary_bkg_color = ListedColormap(["#DEF2FF", "#FFFED8"])
+            # Remove `temp_frame_dir` if it exist
+            if os.path.exists(temp_frame_dir):
+                if os.name == "posix":
+                    os.system(f"rm -rf {temp_frame_dir}")
+                elif os.name == "nt":
+                    os.system(f"rmdir /s /q {temp_frame_dir}")
+            # Create `temp_frame_dir` to store frames
             os.makedirs(temp_frame_dir, exist_ok=True)
-            # update_frame = lambda i: PIL.Image.open(f"{temp_frame_dir}/frame_{i}.png")
+            # Plot the decision boundaries
+
+            # This function is tool for getting and plotting each frame in the dir
             def update_frame(i):
                 img = PIL.Image.open(f"{temp_frame_dir}/frame_{i}.png")
                 ax.imshow(img)
+                # Print the frame number
+                ax.text(
+                    axis_0_min,
+                    axis_1_max,
+                    f"Frame: {i}",
+                    bbox=dict(facecolor="white", alpha=1),
+                )
                 plt.tight_layout()
                 plt.axis("off")
-            colors = np.array(["#2ca02c", "#9467bd", "#8c564b"])
+
             # <<<<<< Preparation for the animation <<<<<<
 
         # Iteration to edit samples
         current_s = 0
         epoch = 0
-        continuous_no_misclassfied_count = 0
-        target_no_misclassified_count = kwargs.get("target_no_misclassified_count", 3)
+        continuous_count_of_no_misclassfied = 0
         while True:
             # Part `it` is the part to edit
             X_edit, y_edit = X_parts[current_s], y_parts[current_s]
@@ -90,37 +137,54 @@ class KNN(BaseClassifier):
             X_train = np.concatenate(X_parts[:current_s] + X_parts[current_s + 1 :])
             y_train = np.concatenate(y_parts[:current_s] + y_parts[current_s + 1 :])
             # Fit the classifier
-            self.fit(X_train, y_train)
+            self.fit(
+                X_train,
+                y_train,
+            )
             # Predict the labels of the samples to edit
             y_pred = self.predict(X_edit)
             # Find the samples that are misclassified
             misclassified_indices = np.where(y_pred != y_edit)[0]
 
             if whether_visualize:
-                # Initial frame
-                fig = plt.figure(figsize=(8, 6), dpi=100)
+                # Create a frame for current iteration
+                fig = plt.figure(figsize=(6, 6), dpi=200)
+
                 ax = plt.axes()
-                ax.set_xlim(axis_0_min, axis_1_max)
+                ax.set_xlim(axis_0_min, axis_0_max)
                 ax.set_ylim(axis_1_min, axis_1_max)
                 ax.set_title("KNN")
                 ax.set_xlabel("x")
                 ax.set_ylabel("y")
                 ax.set_aspect("equal")
-                # Trian data: o, Test data: x, Misclassified: square, Color: base on label
+
+                # Create a meshgrid to plot decision boundaries
+                h = 0.02  # Step size in the mesh
+                xx, yy = np.meshgrid(
+                    np.arange(axis_0_min, axis_0_max, h),
+                    np.arange(axis_1_min, axis_1_max, h),
+                )
+
+                # Get predictions for each point in the meshgrid
+                Z = self.predict(np.c_[xx.ravel(), yy.ravel()])
+                Z = Z.reshape(xx.shape)
+                ax.contourf(xx, yy, Z, cmap=decision_boundary_bkg_color, alpha=1)
+
+                # Trian data: o, Test data: ^, Misclassified: square, Color: base on label
                 ax.scatter(
                     X_train[:, 0],
                     X_train[:, 1],
-                    c=colors[y_train],
+                    facecolors="none",
+                    edgecolors=scatter_colors[y_train],
                     marker="o",
-                    label="Training Data",
                     s=20,
                 )
                 ax.scatter(
                     X_edit[:, 0],
                     X_edit[:, 1],
-                    c=colors[y_edit],
-                    marker="s",
-                    label="Test Data",
+                    facecolors="none",
+                    edgecolors=scatter_colors[y_edit],
+                    marker="^",
                     s=20,
                 )
                 ax.scatter(
@@ -128,34 +192,90 @@ class KNN(BaseClassifier):
                     X_edit[misclassified_indices, 1],
                     c="r",
                     marker="x",
-                    label="Misclassified",
-                    s=20
+                    s=20,
                 )
-                plt.legend()
+                class_labels = ["Boy", "Girl", "Splited Train", "Splited Test (Edit)", "Misclassified"]
+                markersize=6
+                legend_elements = [
+                    plt.Line2D(
+                        [0],
+                        [0],
+                        marker="s",
+                        color=scatter_colors[0],
+                        label=class_labels[0],
+                        markersize=markersize,
+                        linestyle="None"
+                    ),
+                    plt.Line2D(
+                        [0],
+                        [0],
+                        marker="s",
+                        color=scatter_colors[1],
+                        label=class_labels[1],
+                        markersize=markersize,
+                        linestyle="None"
+                    ),
+                    plt.Line2D(
+                        [0],
+                        [0],
+                        marker="o",
+                        markerfacecolor="none",
+                        markeredgecolor="black",
+                        label=class_labels[2],
+                        markersize=markersize,
+                        linestyle="None"
+                    ),
+                    plt.Line2D(
+                        [0],
+                        [0],
+                        marker="^",
+                        markerfacecolor="none",
+                        markeredgecolor="black",
+                        label=class_labels[3],
+                        markersize=markersize,
+                        linestyle="None"
+                    ),
+                    plt.Line2D(
+                        [0],
+                        [0],
+                        marker="x",
+                        color="r",
+                        label=class_labels[4],
+                        markersize=markersize,
+                        linestyle="None"
+                    ),
+                ]
+
+                plt.legend(handles=legend_elements, fontsize="small")
                 # Save the initial frame
                 fig.savefig(f"{temp_frame_dir}/frame_{epoch}.png")
                 plt.close()
 
             # Update the number of continuous iterations that have no misclassified samples
-            continuous_no_misclassfied_count = (
-                continuous_no_misclassfied_count + 1
+            continuous_count_of_no_misclassfied = (
+                continuous_count_of_no_misclassfied + 1
                 if len(misclassified_indices) == 0
                 else 0
             )
-            if continuous_no_misclassfied_count == target_no_misclassified_count:
+            if continuous_count_of_no_misclassfied == target_count_of_no_misclassified:
                 break
             # Drop the misclassified samples
             X_parts[current_s] = np.delete(X_parts[current_s], misclassified_indices, 0)
             y_parts[current_s] = np.delete(y_parts[current_s], misclassified_indices, 0)
-            current_s = (current_s + 1) % s
+            current_s = (current_s + 1) % split
             epoch += 1
 
+        # Overall fitting
+        X_train = np.concatenate(X_parts)
+        y_train = np.concatenate(y_parts)
+        self.fit(X_train, y_train, method="basic")
+
         if whether_visualize:
-            fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+            fig, ax = plt.subplots(figsize=(6, 6), dpi=200)
             ani = animation.FuncAnimation(
-                fig, update_frame, frames=epoch+1, interval=1000, repeat=True
+                fig, update_frame, frames=epoch + 1, interval=1000, repeat=True
             )
-            ani.save("animation.gif", writer="imagemagick", fps=1)
+            ani.save("animation.gif", writer="pillow", fps=1)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
