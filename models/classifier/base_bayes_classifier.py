@@ -124,6 +124,22 @@ class BaseBayesClassifier(BaseClassifier):
             Data to be predicted.
         """
         raise NotImplementedError
+    
+    def predict_prob(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict the probabilities of the given data.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Data to be predicted.
+        
+        Returns
+        -------
+        np.ndarray
+            Probabilities of the given data.
+        """
+        return np.array([self.cal_posterior_probs(x) for x in X])
 
     def cal_conditional_probs(self, sample: np.ndarray) -> np.ndarray:
         """

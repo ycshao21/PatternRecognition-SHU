@@ -80,6 +80,7 @@ class KNN(BaseClassifier):
         target_count_of_no_misclassified: int = 3,
         temp_frame_dir: str = "temp_frames",
         whether_visualize: bool = True,
+        outputdir: str = "outputs/",
         **kwargs,
     ) -> None:
         n_samples = X.shape[0]
@@ -271,12 +272,15 @@ class KNN(BaseClassifier):
         y_train = np.concatenate(y_parts)
         self.fit(X_train, y_train, method="basic")
 
+        # Save the animation
         if whether_visualize:
+            if not os.path.exists(outputdir):
+                os.makedirs(outputdir)
             fig, ax = plt.subplots(figsize=(6, 6), dpi=200)
             ani = animation.FuncAnimation(
                 fig, update_frame, frames=epoch + 1, interval=1000, repeat=True
             )
-            ani.save(f"animation_{self.n_neighbors}.gif", writer="pillow", fps=1)
+            ani.save(f"{outputdir}animation_{self.n_neighbors}.gif", writer="pillow", fps=1)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
