@@ -123,9 +123,8 @@ def task_03(data):
     knn.fit(
         X_train,
         y_train,
-        method="multi-edit",
-        split=3,
-        target_count_of_no_misclassified=3,
+        method="condense",
+        temp_frame_dir="temp_frames",
         whether_visualize=True,
     )
 
@@ -133,6 +132,7 @@ def task_03(data):
 if __name__ == "__main__":
     initialize.init()
     data = pd.read_csv("dataset/genderdata/preprocessed/all.csv")
-    task_01(data)
-    task_02(data)
+    # task_01(data)
+    # task_02(data)
     # task_03(data)
+    classifier.KNN.create_gif_opencv("temp_frames", "out.avi")
