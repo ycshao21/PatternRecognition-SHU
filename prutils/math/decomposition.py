@@ -57,7 +57,7 @@ class FLDA(BaseDecomposition):
         #       S_w is also a d*d matrix.
         S_w = np.sum(
             [
-                np.dot((X[y == i] - class_means[i]).T, X[y == i] - class_means[i])
+                (X[y == i] - class_means[i]).T @ (X[y == i] - class_means[i])
                 for i in range(n_classes)
             ],
             axis=0
@@ -65,9 +65,8 @@ class FLDA(BaseDecomposition):
 
         # Between-class scatter matrix: S_b = (m_1 - m_2) * (m_1 - m_2).T,
         # where S_b is a d*d matrix.
-        S_b = np.dot(mean_diff, mean_diff.T)
-
-        eigenvalues, eigenvectors = np.linalg.eig(np.dot(np.linalg.inv(S_w), S_b))
+        S_b = np.outer(mean_diff, mean_diff)
+        eigenvalues, eigenvectors = np.linalg.eig(np.linalg.inv(S_w) @ S_b)
         idx = np.argsort(eigenvalues)[::-1][:self.n_components]
         self.eigenvectors = eigenvectors[:, idx]
 

@@ -87,7 +87,7 @@ def task_02(data, model_name: str):
         raise ValueError("Invalid model name.")
 
     # Test the model
-    fig = plt.figure(figsize=(18, 6))
+    fig = plt.figure(figsize=(18, 5))
     fig.suptitle("Task 02")
 
     # 1. Not using PCA >>>>>>
@@ -207,56 +207,6 @@ def task_03(data):
     ax2.set_title("FLDA")
     # <<<<<<
 
-    # # LDA >>>>>>
-    # lda = LDA(n_components=1)
-    # lda.fit(X_train, y_train)
-    # X_train_LDA = flda.transform(X_train)
-    # X_test_LDA = flda.transform(X_test)
-
-    # model = classifier.MinimumErrorBayes()
-    # model.fit(X_train_LDA, y_train)
-
-    # y_pred = model.predict(X_test_LDA)
-    # acc = eval.accuracy(pred=y_pred, truth=y_test)
-    # f1 = eval.f1_score(pred=y_pred, truth=y_test)
-    # logger.critical(f"[LDA] Accuracy: {acc:.4f}, F1 Score: {f1:.4f}")
-
-    # ax3 = plt.subplot(1, 3, 3)
-    # eval.plot_confusion_mat(
-    #     pred=y_pred, truth=y_test, class_names=LABELS, show=False
-    # )
-    # ax3.set_title("LDA")
-    # # <<<<<<
-    plt.show()
-
-
-def test(data):
-    X = data[FEATURES].values.astype(float)
-    y = data["sex"].values.astype(int)
-
-    X = StandardScaler().fit_transform(X)
-
-    # Visualize data
-    fig = plt.figure(figsize=(18, 6))
-    fig.suptitle("Test")
-
-    flda = decomposition.FLDA(n_components=1)
-    X_FLDA = flda.fit_transform(X, y)
-    ax1 = plt.subplot(121)
-    ax1.hist(X_FLDA[y == 0][:, 0], color='r', alpha=0.5)
-    ax1.hist(X_FLDA[y == 1][:, 0], color='b', alpha=0.5)
-    ax1.set_title("FLDA")
-    ax1.legend(LABELS)
-
-
-    lda = LDA(n_components=1)
-    X_LDA = lda.fit_transform(X, y)
-    ax2 = plt.subplot(122)
-    ax2.hist(X_LDA[y == 0][:, 0], color='r', alpha=0.5)
-    ax2.hist(X_LDA[y == 1][:, 0], color='b', alpha=0.5)
-    ax2.set_title("LDA")
-    ax2.legend(LABELS)
-    # <<<<<<
     plt.show()
 
 if __name__ == "__main__":
@@ -265,4 +215,3 @@ if __name__ == "__main__":
     task_01(data)
     task_02(data, model_name='Bayes')
     task_03(data)
-    test(data)
