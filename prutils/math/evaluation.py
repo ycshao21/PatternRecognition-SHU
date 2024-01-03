@@ -15,11 +15,11 @@ def f1_score(pred: np.ndarray, truth: np.ndarray) -> float:
     return 2 * precision * recall / (precision + recall)
 
 
-def confusion_mat(
+def plot_confusion_mat(
     pred: np.ndarray,
     truth: np.ndarray,
     class_names: list[str],
-    title: str = "Confusion Matrix",
+    title: str = None,
     camp: str = "Blues",
     fontsize: int = 12,
     save_path: str = None,
@@ -28,7 +28,6 @@ def confusion_mat(
     cm = skmetrics.confusion_matrix(truth, pred)
     # Divide each element by the sum of the corresponding row
     cm_percent = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
-
     # Plot
     sns.heatmap(
         data=cm_percent,
@@ -38,9 +37,8 @@ def confusion_mat(
         xticklabels=class_names,
         yticklabels=class_names,
     )
-    plt.title(title, fontsize=fontsize)
-    plt.xlabel("Predicted", fontsize=fontsize)
-    plt.ylabel("True", fontsize=fontsize)
+    if title is not None:
+        plt.title(title, fontsize=fontsize)
     plt.xticks(fontsize=fontsize, rotation=45)
     plt.yticks(fontsize=fontsize, rotation=45)
 

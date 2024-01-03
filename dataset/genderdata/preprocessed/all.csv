@@ -1,4 +1,4 @@
-身高(cm),体重(kg),鞋码,性别,脚长(mm)
+height(cm),weight(kg),shoe_size,sex,foot_length(mm)
 167.0,55.0,41.0,1,
 176.0,66.0,43.0,1,
 175.0,65.0,42.0,1,
