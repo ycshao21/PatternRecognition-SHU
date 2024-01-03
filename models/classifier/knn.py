@@ -95,8 +95,8 @@ class KNN(BaseClassifier):
 
         if whether_visualize:
             # >>>>>> Preparation for the animation >>>>>>
-            axis_0_min, axis_0_max = X[:, 0].min(), X[:, 0].max()
-            axis_1_min, axis_1_max = X[:, 1].min(), X[:, 1].max()
+            axis_0_min, axis_0_max = X[:, 0].min() - 0.5, X[:, 0].max() + 0.5
+            axis_1_min, axis_1_max = X[:, 1].min() - 0.5, X[:, 1].max() + 0.5
             # [ToDo]: Extend the color list for multi-class classification
             scatter_colors = np.array(["#183E0C", "#58135E", "#8c564b"])
             decision_boundary_bkg_color = ListedColormap(["#DEF2FF", "#FFFED8"])
@@ -131,6 +131,7 @@ class KNN(BaseClassifier):
         epoch = 0
         continuous_count_of_no_misclassfied = 0
         while True:
+            print(f"epoch: {epoch}")
             # Part `it` is the part to edit
             X_edit, y_edit = X_parts[current_s], y_parts[current_s]
             # Other parts are used as training data
@@ -153,7 +154,7 @@ class KNN(BaseClassifier):
                 ax = plt.axes()
                 ax.set_xlim(axis_0_min, axis_0_max)
                 ax.set_ylim(axis_1_min, axis_1_max)
-                ax.set_title("KNN")
+                ax.set_title(f"KNN (n_neighbors={self.n_neighbors})")
                 ax.set_xlabel("x")
                 ax.set_ylabel("y")
                 ax.set_aspect("equal")
@@ -177,7 +178,7 @@ class KNN(BaseClassifier):
                     facecolors="none",
                     edgecolors=scatter_colors[y_train],
                     marker="o",
-                    s=20,
+                    s=15,
                 )
                 ax.scatter(
                     X_edit[:, 0],
@@ -185,14 +186,14 @@ class KNN(BaseClassifier):
                     facecolors="none",
                     edgecolors=scatter_colors[y_edit],
                     marker="^",
-                    s=20,
+                    s=15,
                 )
                 ax.scatter(
                     X_edit[misclassified_indices, 0],
                     X_edit[misclassified_indices, 1],
                     c="r",
                     marker="x",
-                    s=20,
+                    s=30,
                 )
                 class_labels = ["Boy", "Girl", "Splited Train", "Splited Test (Edit)", "Misclassified"]
                 markersize=6
@@ -246,7 +247,7 @@ class KNN(BaseClassifier):
                     ),
                 ]
 
-                plt.legend(handles=legend_elements, fontsize="small")
+                plt.legend(handles=legend_elements, fontsize="small", loc="upper left")
                 # Save the initial frame
                 fig.savefig(f"{temp_frame_dir}/frame_{epoch}.png")
                 plt.close()
@@ -275,7 +276,7 @@ class KNN(BaseClassifier):
             ani = animation.FuncAnimation(
                 fig, update_frame, frames=epoch + 1, interval=1000, repeat=True
             )
-            ani.save("animation.gif", writer="pillow", fps=1)
+            ani.save(f"animation_{self.n_neighbors}.gif", writer="pillow", fps=1)
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """

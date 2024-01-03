@@ -31,7 +31,8 @@ def task_01(data):
     X_test = scaler.transform(X_test)
 
     # Create KNN classifier
-    knn = classifier.KNN(n_neighbors=3)
+    n_neighbors = 3
+    knn = classifier.KNN(n_neighbors=n_neighbors)
     knn.fit(X_train, y_train)
     y_pred = knn.predict(X_test)
 
@@ -43,9 +44,11 @@ def task_01(data):
     # Confusion matrix
     plt.figure(figsize=(10, 8))
     eval.plot_confusion_mat(
-        pred=y_pred, truth=y_test, class_names=LABELS, title="Task 01: KNN", show=False
+        pred=y_pred, truth=y_test,
+        class_names=LABELS,
+        title=f"Task 01: KNN (n_neighbors={n_neighbors})",
+        show=False
     )
-
     plt.show()
 
 
@@ -88,7 +91,7 @@ def task_02(data):
         )
         ax_cm.set_title(f"n_neighbors={n_neighbors}")
 
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(10, 6))
     for n_neighbors, y_score in zip(n_neighbors_list, y_scores):
         fpr, tpr, _ = roc_curve(y_test, y_score)
         plt.plot(fpr, tpr, label=f"n_neighbors={n_neighbors}")
@@ -116,7 +119,7 @@ def task_03(data):
     X_test = scaler.transform(X_test)
 
     # Sample editing
-    knn = classifier.KNN(n_neighbors=3)
+    knn = classifier.KNN(n_neighbors=20)
     knn.fit(
         X_train,
         y_train,
@@ -130,6 +133,6 @@ def task_03(data):
 if __name__ == "__main__":
     initialize.init()
     data = pd.read_csv("dataset/genderdata/preprocessed/all.csv")
-    # task_01(data)
-    # task_02(data)
-    task_03(data)
+    task_01(data)
+    task_02(data)
+    # task_03(data)
